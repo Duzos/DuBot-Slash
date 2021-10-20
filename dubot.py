@@ -273,7 +273,7 @@ async def _roll(ctx,Lowest: int=1,Highest: int=6):
     diceEmbed.set_thumbnail(bot.avatar_url)
     await ctx.send(diceEmbed)
 
-@slash.slash(name='rps',description='Rock, Paper, Scissors!',option=[
+@slash.slash(name='rps',description='Rock, Paper, Scissors!',options=[
     create_option(
         name='Player',
         description='Rock, Paper or Scissors.',
