@@ -1,5 +1,4 @@
 # Importing
-from functools import _Descriptor
 import random
 from typing_extensions import Required
 import discord
