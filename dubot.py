@@ -1,6 +1,4 @@
 # Importing
-import random
-from typing_extensions import Required
 import discord
 from discord.embeds import EmptyEmbed
 from discord.ext import commands
@@ -11,6 +9,7 @@ import json
 import os
 import sys
 import requests
+import random
 
 # Setting up the Bot.
 intents = discord.Intents.default()
