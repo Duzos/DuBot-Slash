@@ -244,8 +244,8 @@ async def _say(ctx,message: str):
 async def _reverse(ctx, message: str):
     await ctx.send(message[::-1])
 
-@slash.slash(name='flip',description='Flips a coin.')
-async def _flip(ctx):
+@slash.slash(name='coin',description='Flips a coin.')
+async def _coin(ctx):
         coin = ['Heads', 'Tails']
         result = random.choice(coin)
         
@@ -255,84 +255,84 @@ async def _flip(ctx):
 
 @slash.slash(name='roll',description='Rolls a dice.',options=[
     create_option(
-        name='Lowest',
+        name='lowest',
         description='The lowest number.',
         required=False,
         option_type=4
     ),
     create_option(
-        name='Highest',
+        name='highest',
         description="The highest number.",
         required=False,
         option_type=4
     )
 ])
-async def _roll(ctx,Lowest: int=1,Highest: int=6):
-    diceResult = random.randint(Lowest,Highest)
+async def _roll(ctx,lowest: int=1,highest: int=6):
+    diceResult = random.randint(lowest,highest)
     diceEmbed = discord.Embed(title=":game_die:",description=f'The dice rolled a **{diceResult}**.',color=discord.Colour.random())
     diceEmbed.set_thumbnail(bot.avatar_url)
     await ctx.send(diceEmbed)
 
 @slash.slash(name='rps',description='Rock, Paper, Scissors!',options=[
     create_option(
-        name='Player',
+        name='player',
         description='Rock, Paper or Scissors.',
         required=True,
         option_type=3,
         choices=[
             create_choice(
-                name='Rock',
+                name='rock',
                 value='rock'
             ),
             create_choice(
-                name='Paper',
+                name='paper',
                 value='paper'
             ),
             create_choice(
-                name='Scissors',
+                name='scissors',
                 value='scissors'
             )
         ]
     )
 ])
-async def _rps(ctx,Player: str):
+async def _rps(ctx,player: str):
         choices = ["rock", "paper", "scissors"]
         computers_answer = random.choice(choices)
 
-        if computers_answer == Player:
-            resultEmbed = discord.Embed(title='Tie.',description=f'You both picked {Player}.',color=discord.Colour.random())
+        if computers_answer == player:
+            resultEmbed = discord.Embed(title='Tie.',description=f'You both picked {player}.',color=discord.Colour.random())
             resultEmbed.set_thumbnail(bot.avatar_url)
             await ctx.send(embed=resultEmbed)
             return
         elif computers_answer == "rock":
-            if Player == "paper":
+            if player == "paper":
                 resultEmbed = discord.Embed(title='You win!',description=f'Your opponent picked {computers_answer}.',color=discord.Colour.random())
                 resultEmbed.set_thumbnail(bot.avatar_url)
                 await ctx.send(embed=resultEmbed)
                 return
-            if Player == "scissors":
+            if player == "scissors":
                 resultEmbed = discord.Embed(title='You lose.',description=f'Your opponent picked {computers_answer}.',color=discord.Colour.random())
                 resultEmbed.set_thumbnail(bot.avatar_url)
                 await ctx.send(embed=resultEmbed)
                 return
         elif computers_answer == "paper":
-            if Player == "scissors":
+            if player == "scissors":
                 resultEmbed = discord.Embed(title='You win!',description=f'Your opponent picked {computers_answer}.',color=discord.Colour.random())
                 resultEmbed.set_thumbnail(bot.avatar_url)
                 await ctx.send(embed=resultEmbed)
                 return
-            if Player == "rock":
+            if player == "rock":
                 resultEmbed = discord.Embed(title='You lose.',description=f'Your opponent picked {computers_answer}.',color=discord.Colour.random())
                 resultEmbed.set_thumbnail(bot.avatar_url)
                 await ctx.send(embed=resultEmbed)
                 return
         elif computers_answer == "scissors":
-            if Player == "rock":
+            if player == "rock":
                 resultEmbed = discord.Embed(title='You win!',description=f'Your opponent picked {computers_answer}.',color=discord.Colour.random())
                 resultEmbed.set_thumbnail(bot.avatar_url)
                 await ctx.send(embed=resultEmbed)
                 return
-            if Player == "paper":
+            if player == "paper":
                 resultEmbed = discord.Embed(title='You lose.',description=f'Your opponent picked {computers_answer}.',color=discord.Colour.random())
                 resultEmbed.set_thumbnail(bot.avatar_url)
                 await ctx.send(embed=resultEmbed)
@@ -356,47 +356,47 @@ async def _gay(ctx,user: str):
 
 @slash.slash(name='embed',description='Embed creator',options=[
     create_option(
-        name='Title',
+        name='title',
         description='Title of the embed',
         required=True,
         option_type=3
     ),
     create_option(
-        name='Description',
+        name='description',
         description='Description of the embed',
         required=True,
         option_type=3
     )
 ])
-async def _embed(ctx,Title: str, Description: str):
-    customEmbed = discord.Embed(title=Title,description=Description,color=discord.Colour.random())
+async def _embed(ctx,title: str, description: str):
+    customEmbed = discord.Embed(title=title,description=description,color=discord.Colour.random())
     customEmbed.set_thumbnail(bot.avatar_url)
     await ctx.send(embed=customEmbed)
 
 @slash.slash(name='yn',description='Gives you a yes or no answer',options=[
     create_option(
-        name='Question',
+        name='question',
         description='The question you want answered',
         required=True,
         option_type=3
     )
 ])
-async def _yn(ctx,Question: str):
+async def _yn(ctx,question: str):
     responses=['Yes','No']
     ynAnswer = random.choice(responses)
-    ynEmbed = discord.Embed(title=Question,description=ynAnswer,color=discord.Colour.random())
+    ynEmbed = discord.Embed(title=question,description=ynAnswer,color=discord.Colour.random())
     ynEmbed.set_thumbnail(bot.avatar_url)
     await ctx.send(embed=ynEmbed)
 
 @slash.slash(name='8ball',description='Gives you a random answer',options=[
     create_option(
-        name='Question',
+        name='question',
         description='The question you want answered',
         required=True,
         option_type=3
     )
 ])
-async def _8ball(ctx,Question: str):
+async def _8ball(ctx,question: str):
         responses = [
         "It is certain",
         "It is decidedly so",
@@ -419,7 +419,7 @@ async def _8ball(ctx,Question: str):
         "Outlook not so good",
         "Very doubtful"]
         ballAnswer = random.choice(responses)
-        ballEmbed = discord.Embed(title=Question,description=ballAnswer,color=discord.Colour.random())
+        ballEmbed = discord.Embed(title=question,description=ballAnswer,color=discord.Colour.random())
         ballEmbed.set_thumbnail(bot.avatar_url)
         await ctx.send(embed=ballEmbed)
 
