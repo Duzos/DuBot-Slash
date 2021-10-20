@@ -245,7 +245,7 @@ async def _reverse(ctx, message: str):
     await ctx.send(message[::-1])
 
 @slash.slash(name='flip',description='Flips a coin.')
-async def  _flip(ctx):
+async def _flip(ctx):
         coin = ['Heads', 'Tails']
         result = random.choice(coin)
         
