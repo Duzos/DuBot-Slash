@@ -50,11 +50,51 @@ async def _restart(ctx):
     os.execv(sys.executable, ['python'] + sys.argv)
 
  # Slash commands:
+
+  # Information Category:
+
+@slash.slash(name='bitcoin',description='Tells you the current value of Bitcoin.',options=[
+    create_option(
+        name='amount',
+        description='The amount of bitcoin.',
+        required=False,
+        option_type=4
+    )
+])
+async def _bitcoin(ctx,amount: int=1):
+        response_API = requests.get('https://api.coindesk.com/v1/bpi/currentprice.json')
+        data = response_API.text
+        parse_json = json.loads(data)
+        bitcoinGBP = parse_json['bpi']['GBP']['rate_float']
+        bitcoinUSD = parse_json['bpi']['USD']['rate_float']
+        bitcoinEUR = parse_json['bpi']['EUR']['rate_float']
+
+
+        bitcoinEmbed = discord.Embed(title=f'Price of {amount} bitcoin',color=discord.Colour.gold())
+        bitcoinEmbed.add_field(name='(€)EUR',value=round(bitcoinEUR * amount),inline=True)
+        bitcoinEmbed.add_field(name='(£)GBP',value=round(bitcoinGBP*amount),inline=True)
+        bitcoinEmbed.add_field(name='($)USD',value=round(bitcoinUSD*amount),inline=True)
+        bitcoinEmbed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Bitcoin.svg/64px-Bitcoin.svg.png")
+        await ctx.send(embed=bitcoinEmbed)
+
 @slash.slash(name='ping',description='Tells you the bots ping')
 async def _ping(ctx):
         pingEmbed = discord.Embed(title=f'Ping of {bot.user.name}',description=f':stopwatch:  {round(bot.latency * 1000)}ms',color=discord.Colour.random())
         pingEmbed.set_thumbnail(url=bot.user.avatar_url)
         await ctx.send(embed=pingEmbed)
+
+@slash.slash(name='avatar',description='Sends the avatar of a user',options=[
+    create_option(
+        name='user',
+        description='Select a user',
+        required=True,
+        option_type=6
+    )
+])
+async def _avatar(ctx, user: str):
+    avatarembed = discord.Embed(description=f'Avatar of {user.mention}',color=discord.Colour.random(),type='image')
+    avatarembed.set_image(url=user.avatar_url)
+    await ctx.send(embed=avatarembed)
 
 @slash.slash(name='user_info',description='Gets information on a user',options=[
     create_option(
@@ -117,6 +157,8 @@ async def _invite(ctx):
         inviteEmbed = discord.Embed(title="Invite Link",description="[Bot Invite](https://discord.com/api/oauth2/authorize?client_id=900481597311172660&permissions=0&scope=bot%20applications.commands)",color=discord.Colour.random())
         inviteEmbed.add_field(name='Support Server',value="[Server Invite](https://discord.gg/Raakw6367z)")
         await ctx.send(embed=inviteEmbed)
+
+  # Fun category
 
 @slash.slash(name='random_name',description='Gives you a random name.')
 async def _randomname(ctx):
@@ -339,6 +381,67 @@ async def _rps(ctx,player: str):
                 return
         else:
             return
+
+@slash.slash(name='number_guess',description='Guess a number from 1-10',option=[
+    create_option(
+        name='guess',
+        description='Your guess',
+        required=True,
+        option_type=4,
+        choices=[
+            create_choice(
+                name='1',
+                value=1
+            ),
+            create_choice(
+                name='2',
+                value=2
+            ),
+            create_choice(
+                name='3',
+                value=3
+            ),
+            create_choice(
+                name='4',
+                value=4
+            ),
+            create_choice(
+                name='5',
+                value=5
+            ),
+            create_choice(
+                name='6',
+                value=6
+            ),
+            create_choice(
+                name='7',
+                value=7
+            ),
+            create_choice(
+                name='8',
+                value=8
+            ),
+            create_choice(
+                name='9',
+                value=9
+            ),
+            create_choice(
+                name='10',
+                value=10
+            )
+        ]
+    )
+])
+async def _numberguess(ctx, guess: int):
+    computerNumber = random.randint(1,10)
+    if guess == computerNumber:
+        winEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.green)
+        winEmbed.add_field(name='You won!',value=f'The winning number was: {computerNumber}')
+        await ctx.send(embed=winEmbed)
+        return
+    else:
+        loseEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.red)
+        loseEmbed.add_field(name='You lost',value=f'The corret number was: {computerNumber}')
 
 @slash.slash(name='gay',description='Find out how gay you are (joke)',options=[
     create_option(
