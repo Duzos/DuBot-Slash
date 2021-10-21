@@ -313,7 +313,7 @@ async def _roll(ctx,lowest: int=1,highest: int=6):
     diceResult = random.randint(lowest,highest)
     diceEmbed = discord.Embed(title=":game_die:",description=f'The dice rolled a **{diceResult}**.',color=discord.Colour.random())
     diceEmbed.set_thumbnail(url=bot.user.avatar_url)
-    await ctx.send(diceEmbed)
+    await ctx.send(embed=diceEmbed)
 
 @slash.slash(name='rps',description='Rock, Paper, Scissors!',options=[
     create_option(
@@ -441,7 +441,8 @@ async def _numberguess(ctx, guess: int):
         return
     else:
         loseEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.red())
-        loseEmbed.add_field(name='You lost',value=f'The corret number was: {computerNumber}')
+        loseEmbed.add_field(name='You lost',value=f'The correct number was: {computerNumber}')
+        await ctx.send(embed=loseEmbed)
 
 @slash.slash(name='gay',description='Find out how gay you are (joke)',options=[
     create_option(
