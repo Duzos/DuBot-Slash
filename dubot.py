@@ -382,7 +382,7 @@ async def _rps(ctx,player: str):
         else:
             return
 
-@slash.slash(name='number_guess',description='Guess a number from 1-10',option=[
+@slash.slash(name='number_guess',description='Guess a number from 1-10',options=[
     create_option(
         name='guess',
         description='Your guess',
