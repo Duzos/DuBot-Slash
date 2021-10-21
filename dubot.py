@@ -435,12 +435,12 @@ async def _rps(ctx,player: str):
 async def _numberguess(ctx, guess: int):
     computerNumber = random.randint(1,10)
     if guess == computerNumber:
-        winEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.green)
+        winEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.green())
         winEmbed.add_field(name='You won!',value=f'The winning number was: {computerNumber}')
         await ctx.send(embed=winEmbed)
         return
     else:
-        loseEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.red)
+        loseEmbed = discord.Embed(title=f'Your number is {guess}',color=discord.Colour.red())
         loseEmbed.add_field(name='You lost',value=f'The corret number was: {computerNumber}')
 
 @slash.slash(name='gay',description='Find out how gay you are (joke)',options=[
