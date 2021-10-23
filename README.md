@@ -39,7 +39,7 @@ We will come back to this file later.
  
  <h2>Back inside the config file</h2>
  <p1>
- Inside of the empty quotes next to "token":, paste your bots token inside.<br>
+ Inside of the empty quotes next to <code>"token":</code> paste your bots token inside.<br>
  Enable discord developer mode<br>
  <a href="https://www.youtube.com/watch?v=13LeA6m9kU8">tutorial</a><br>
  Now, get your id number and paste it next to the ownerID section of the config file.<br>
