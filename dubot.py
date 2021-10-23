@@ -1,5 +1,7 @@
 # Importing
 import discord
+from discord import colour
+from discord import guild
 from discord.embeds import EmptyEmbed
 from discord.ext import commands
 from discord.ext.commands.converter import _get_from_guilds
@@ -25,11 +27,12 @@ with open('config.json') as f:
 
 token = config['token']
 guildIDs = config['guildIDs']
+ownerID = config['ownerID']
 
 # When the bot starts
 @bot.event
 async def on_ready():
-    await bot.change_presence(status=discord.Status.online, activity=discord.Game("in Python"))
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game("with the / key"))
     print(f'{bot.user.name} is ready!')
 
 # The commands
@@ -526,6 +529,129 @@ async def _8ball(ctx,question: str):
         ballEmbed = discord.Embed(title=question,description=ballAnswer,color=discord.Colour.random())
         ballEmbed.set_thumbnail(url=bot.user.avatar_url)
         await ctx.send(embed=ballEmbed)
+
+   # Other category
+
+@slash.slash(name='math',description='Runs basic calculation',options=[
+    create_option(
+        name='first',
+        description='The first number.',
+        option_type=4,
+        required=True
+    ),
+    create_option(
+        name='operator',
+        description='The operator.',
+        option_type=3,
+        required=True,
+        choices=[
+            create_choice(
+                name='+',
+                value='+'
+            ),
+            create_choice(
+                name='-',
+                value='-'
+            ),
+            create_choice(
+                name='/',
+                value='/'
+            ),
+            create_choice(
+                name='*',
+                value='*'
+            )
+        ]
+    ),
+    create_option(
+        name='second',
+        description='The second number.',
+        option_type=4,
+        required=True
+    ),
+])
+async def _math(ctx,first: int,operator: str,second: int):
+    if operator == "+":
+        numberEmbed = discord.Embed(title=f'{first} {operator} {second}',description=first+second,color=discord.Colour.random())
+        numberEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=numberEmbed)
+        return
+    elif operator == "-":
+        numberEmbed = discord.Embed(title=f'{first} {operator} {second}',description=first-second,color=discord.Colour.random())
+        numberEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=numberEmbed)
+        return
+    elif operator == "/":
+        numberEmbed = discord.Embed(title=f'{first} {operator} {second}',description=first/second,color=discord.Colour.random())
+        numberEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=numberEmbed)
+        return
+    elif operator == "*":
+        numberEmbed = discord.Embed(title=f'{first} {operator} {second}',description=first*second,color=discord.Colour.random())
+        numberEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=numberEmbed)
+        return
+    else:
+        await ctx.send("An error occured.")
+        return
+
+@slash.slash(name='colour',description='Sends a random colour')
+async def _colour(ctx):
+    chosenColour = discord.Colour.random()
+    colourEmbed = discord.Embed(title=chosenColour,color=chosenColour)
+    colourEmbed.set_thumbnail(url=bot.user.avatar_url)
+    await ctx.send(embed=colourEmbed)
+
+@slash.slash(name='bug',description='Report a bug.',options=[
+    create_option(
+        name='bug',
+        description='The bug',
+        option_type=3,
+        required=True
+    )
+])
+async def _bug(ctx,bug: str):
+    # Get the owner
+    owner = bot.get_user(ownerID)
+
+    # Make the embed to send
+    bugEmbed = discord.Embed(title="New Bug:",color=discord.Colour.random())
+    bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
+    bugEmbed.add_field(name='Bug:',value=bug)
+    bugEmbed.add_field(name='Reported by:',value=f'<@!{ctx.author.id}>')
+    await owner.send(embed=bugEmbed)
+    
+    # Make other embed for user
+    confirmEmbed = discord.Embed(title='Bug recieved!',color=discord.Colour.random())
+    confirmEmbed.add_field(name='Bug:',value=bug)
+    confirmEmbed.set_footer(text='Thank you for reporting!')
+    await ctx.send(embed=confirmEmbed)
+
+@slash.slash(name='idea',description='Give me ideas.',options=[
+    create_option(
+        name='idea',
+        description='The idea',
+        option_type=3,
+        required=True
+    )
+])
+async def _idea(ctx,idea: str):
+    # Get the owner
+    owner = bot.get_user(ownerID)
+
+    # Make the embed to send
+    bugEmbed = discord.Embed(title="New idea:",color=discord.Colour.random())
+    bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
+    bugEmbed.add_field(name='Idea:',value=idea)
+    bugEmbed.add_field(name='Made by:',value=f'<@!{ctx.author.id}>')
+    await owner.send(embed=bugEmbed)
+    
+    # Make other embed for user
+    confirmEmbed = discord.Embed(title='Idea recieved!',color=discord.Colour.random())
+    confirmEmbed.add_field(name='Idea:',value=idea)
+    confirmEmbed.set_footer(text='Thank you for your ideas!')
+    await ctx.send(embed=confirmEmbed)
+
 
 
 # Run the bot
