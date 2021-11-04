@@ -4,9 +4,11 @@ from discord import colour
 from discord import guild
 from discord.embeds import EmptyEmbed
 from discord.ext import commands
+from discord.ext import tasks
 from discord.ext.commands.converter import _get_from_guilds
 from discord_slash import SlashCommand,SlashContext
 from discord_slash.utils.manage_commands import create_choice,create_option
+import topgg
 import json
 import os
 import sys
@@ -18,22 +20,51 @@ intents = discord.Intents.default()
 intents.presences = True
 intents.members = True
 
-bot = commands.Bot(command_prefix="db.", intents=intents, case_insensitive=True)
-slash = SlashCommand(bot,sync_commands=True)
-bot.remove_command('help')
-
 with open('config.json') as f:
     config = json.load(f)
 
 token = config['token']
 guildIDs = config['guildIDs']
 ownerID = config['ownerID']
+topToken = config['topToken']
+
+bot = commands.Bot(command_prefix="db.", intents=intents, case_insensitive=True)
+slash = SlashCommand(bot,sync_commands=True)
+bot.topgg = topgg.DBLClient(bot=bot,token=topToken)
+bot.topgg_webhook = topgg.WebhookManager(bot).dbl_webhook(route='/dblwebhook',auth_key='password')
+bot.topgg_webhook.run(5000)
+bot.remove_command('help')
+
+owner = bot.get_user(ownerID)
 
 # When the bot starts
 @bot.event
 async def on_ready():
-    await bot.change_presence(status=discord.Status.online, activity=discord.Game("with the / key"))
+    await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
     print(f'{bot.user.name} is ready!')
+
+# TopGG Stuff (Remove if you dont have TopGG)
+@tasks.loop(minutes=30)
+async def update_stats():
+    try:
+        await bot.topgg.post_guild_count()
+    except Exception as e:
+        await owner.send('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
+update_stats.start()
+
+@bot.event
+async def on_dbl_test(data):
+    print(f"Recieved test vote:\n{data}")
+    await owner.send(f"Recieved test vote:\n{data}")
+
+@bot.event
+async def on_dbl_vote(data):
+    print("A")
+    if data["type"] == "test":
+        return bot.dispatch('dbl_test', data)
+
+    await owner.send(f"Recieved a vote:\n{data}")
+
 
 # The commands
 
@@ -43,6 +74,7 @@ async def on_ready():
 async def _shutdown(ctx):
     await ctx.send("Bye!")
     await bot.change_presence(status=discord.Status.invisible)
+    await slash.close()
     await bot.close()
 
 @bot.command(name='restart',description='Restarts the bot')
@@ -51,6 +83,15 @@ async def _restart(ctx):
     await ctx.send("See you soon!")
     await bot.change_presence(status=discord.Status.invisible)
     os.execv(sys.executable, ['python'] + sys.argv)
+
+@bot.command(name='server_list',description='Gets the list of servers the bot is in.')
+@commands.is_owner()
+async def _serverList(ctx):
+    await ctx.message.delete()
+    list = ""
+    for guild in bot.guilds:
+        list += f"{guild.name}\n"
+    await owner.send(list)
 
  # Slash commands:
 
@@ -110,6 +151,8 @@ async def _avatar(ctx, user: str):
 async def _userinfo(ctx, user:str):
         rolelist = [r.name for r in user.roles if r != ctx.guild.default_role]
         roles = ", ".join(rolelist)
+        if roles == "":
+            roles=None
         date_format = "%a, %d %b %Y %I:%M %p"
         uinfoEmbed = discord.Embed(title=f'Info on {user.name}#{user.discriminator}', description=f'**ID:**\n```{user.id}```\n**Roles:**\n```{roles}```\n**Account Created On:**\n```{user.created_at.strftime(date_format)}```\n**Account Joined Guild On:**\n```{user.joined_at.strftime(date_format)}```\n**Nickname:**\n```{user.nick}```\n**Is Bot:**\n```{user.bot}```',color=discord.Colour.random())
         uinfoEmbed.set_thumbnail(url=user.avatar_url)
@@ -611,9 +654,6 @@ async def _colour(ctx):
     )
 ])
 async def _bug(ctx,bug: str):
-    # Get the owner
-    owner = bot.get_user(ownerID)
-
     # Make the embed to send
     bugEmbed = discord.Embed(title="New Bug:",color=discord.Colour.random())
     bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
@@ -636,9 +676,6 @@ async def _bug(ctx,bug: str):
     )
 ])
 async def _idea(ctx,idea: str):
-    # Get the owner
-    owner = bot.get_user(ownerID)
-
     # Make the embed to send
     bugEmbed = discord.Embed(title="New idea:",color=discord.Colour.random())
     bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
