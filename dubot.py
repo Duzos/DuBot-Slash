@@ -35,7 +35,6 @@ bot.topgg_webhook = topgg.WebhookManager(bot).dbl_webhook(route='/dblwebhook',au
 bot.topgg_webhook.run(5000)
 bot.remove_command('help')
 
-owner = bot.get_user(ownerID)
 
 # When the bot starts
 @bot.event
@@ -49,12 +48,14 @@ async def update_stats():
     try:
         await bot.topgg.post_guild_count()
     except Exception as e:
+        owner = bot.get_user(ownerID)
         await owner.send('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
 update_stats.start()
 
 @bot.event
 async def on_dbl_test(data):
     print(f"Recieved test vote:\n{data}")
+    owner = bot.get_user(ownerID)
     await owner.send(f"Recieved test vote:\n{data}")
 
 @bot.event
@@ -62,7 +63,7 @@ async def on_dbl_vote(data):
     print("A")
     if data["type"] == "test":
         return bot.dispatch('dbl_test', data)
-
+    owner = bot.get_user(ownerID)
     await owner.send(f"Recieved a vote:\n{data}")
 
 
@@ -91,6 +92,7 @@ async def _serverList(ctx):
     list = ""
     for guild in bot.guilds:
         list += f"{guild.name}\n"
+    owner = bot.get_user(ownerID)
     await owner.send(list)
 
  # Slash commands:
@@ -659,6 +661,7 @@ async def _bug(ctx,bug: str):
     bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
     bugEmbed.add_field(name='Bug:',value=bug)
     bugEmbed.add_field(name='Reported by:',value=f'<@!{ctx.author.id}>')
+    owner = bot.get_user(ownerID)
     await owner.send(embed=bugEmbed)
     
     # Make other embed for user
@@ -681,6 +684,7 @@ async def _idea(ctx,idea: str):
     bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
     bugEmbed.add_field(name='Idea:',value=idea)
     bugEmbed.add_field(name='Made by:',value=f'<@!{ctx.author.id}>')
+    owner = bot.get_user(ownerID)
     await owner.send(embed=bugEmbed)
     
     # Make other embed for user
