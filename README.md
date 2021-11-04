@@ -1,6 +1,10 @@
 # DuBot-Slash
  A version of DuBot using slash commands
  
+ <a href="https://top.gg/bot/900481597311172660">
+  <img src="https://top.gg/api/widget/900481597311172660.svg">
+</a>
+ 
 <h1>Guide</h1>
 <h2>Requirements</h2>
 <ul>
