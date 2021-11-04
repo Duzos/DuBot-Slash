@@ -94,9 +94,25 @@ async def _serverList(ctx):
     await ctx.message.delete()
     list = ""
     for guild in bot.guilds:
-        list += f"{guild.name}\n"
+        list += f"{guild.name}: {guild.id}\n"
     owner = bot.get_user(ownerID)
     await owner.send(list)
+
+@bot.command(name='server_info_owner',description='Sends information on a server the bot is.')
+@commands.is_owner()
+async def _serverinfoowner(ctx,guild: commands.GuildConverter=None):
+    await ctx.message.delete()
+    owner = bot.get_user(ownerID)
+    guild = guild or ctx.guild
+
+    date_format = "%a, %d %b %Y %I:%M %p"
+
+    roleList = ", ".join([str(r.name) for r in guild.roles])
+
+    ginfoEmbed = discord.Embed(title=f'Info on {guild.name}',description=f'**Description:**\n```{guild.description}```\n**Member Count:**\n```{guild.member_count}```\n**Owner:**\n```{guild.owner}```\n**Roles:**\n```{roleList}```\n**Boost Level:**\n```{guild.premium_tier}```\n**Boost Count:**\n```{guild.premium_subscription_count}```\n**ID:**\n```{guild.id}```\n**Guild Created On:**\n```{guild.created_at.strftime(date_format)}```\n**Region:**\n```{guild.region}```',color=discord.Colour.random())
+    ginfoEmbed.set_thumbnail(url=guild.icon_url)
+    ginfoEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
+    await owner.send(embed=ginfoEmbed)
 
  # Slash commands:
 
@@ -579,6 +595,12 @@ async def _8ball(ctx,question: str):
         await ctx.send(embed=ballEmbed)
 
    # Other category
+
+@slash.slash(name='vote',description=f'vote for this bot.')
+async def _vote(ctx):
+    voteEmbed = discord.Embed(title=f'Vote',description=f'[top.gg](https://top.gg/bot/{bot.user.id}/vote)',color=discord.Colour.random())
+    voteEmbed.set_thumbnail(url=bot.user.avatar_url)
+    await ctx.send(embed=voteEmbed)
 
 @slash.slash(name='math',description='Runs basic calculation',options=[
     create_option(
