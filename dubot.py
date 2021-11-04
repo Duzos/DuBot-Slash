@@ -54,18 +54,21 @@ update_stats.start()
 
 @bot.event
 async def on_dbl_test(data):
+    user = bot.get_user(int(data['user']))
     print(f"Recieved test vote:\n{data}")
-    owner = bot.get_user(ownerID)
-    await owner.send(f"Recieved test vote:\n{data}")
+    testEmbed = discord.Embed(title='Test Vote Successful',description=f'Thank you for voting {user.mention}',color=discord.Colour.random())
+    testEmbed.add_field(name='Raw Data',value=data)
+    testEmbed.set_thumbnail(url="https://clipart.info/images/ccovers/1518056315Dark-Red-Heart-Transparent-Background.png")
+    await user.send(embed=testEmbed)
 
 @bot.event
 async def on_dbl_vote(data):
-    print("A")
-    if data["type"] == "test":
-        return bot.dispatch('dbl_test', data)
-    owner = bot.get_user(ownerID)
-    await owner.send(f"Recieved a vote:\n{data}")
-
+    if data['type'] == 'test':
+        return bot.dispatch('dbl_test',data)
+    user = bot.get_user(int(data['user']))
+    voteEmbed = discord.Embed(title=f'Thank you for voting for {bot.user.name}!',description=f'Thank you for voting {user.mention}',color=discord.Colour.random())
+    voteEmbed.set_thumbnail(url="https://clipart.info/images/ccovers/1518056315Dark-Red-Heart-Transparent-Background.png")
+    await user.send(embed=voteEmbed)
 
 # The commands
 
