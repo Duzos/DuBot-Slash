@@ -39,8 +39,17 @@ bot.remove_command('help')
 # When the bot starts
 @bot.event
 async def on_ready():
-    await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
+    statusChange.start()
     print(f'{bot.user.name} is ready!')
+
+# Update the status every 30 minutes.
+@tasks.loop(minutes=30)
+async def statusChange():
+    try:
+        await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
+    except Exception as e:
+        owner = bot.get_user(ownerID)
+        owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
 
 # TopGG Stuff (Remove if you dont have TopGG)
 @tasks.loop(minutes=30)
