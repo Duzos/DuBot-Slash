@@ -4,9 +4,9 @@
  <a href="https://top.gg/bot/900481597311172660">
   <img src="https://top.gg/api/widget/900481597311172660.svg">
 </a>
- 
-<iframe src="https://discord.com/widget?id=884845702662996068&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
- 
+<br>
+<img src="https://discordapp.com/api/guilds/884845702662996068/widget.png?style=banner3" alt="Discord Banner"/>
+
 <h1>Guide</h1>
 <h2>Requirements</h2>
 <ul>
