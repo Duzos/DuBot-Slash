@@ -6,6 +6,9 @@ from discord.embeds import EmptyEmbed
 from discord.ext import commands
 from discord.ext import tasks
 from discord.ext.commands.converter import _get_from_guilds
+from discord.ext.commands.core import has_permissions
+from discord.ext.commands.core import MissingPermissions
+from discord.ext.commands.core import BotMissingPermissions
 from discord_slash import SlashCommand,SlashContext
 from discord_slash.utils.manage_commands import create_choice,create_option
 import topgg
@@ -79,6 +82,47 @@ async def on_dbl_vote(data):
     voteEmbed.set_thumbnail(url="https://clipart.info/images/ccovers/1518056315Dark-Red-Heart-Transparent-Background.png")
     await user.send(embed=voteEmbed)
 
+# Handling Errors.
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.NotOwner) or isinstance(error, commands.NoPrivateMessage):
+        return
+    elif isinstance(error, commands.BotMissingPermissions):
+        botPermEmbed = discord.Embed(title='ERROR',description='The Bot is missing the required permission(s).',color=0x992D22)
+        permValues = ''
+        for perm in error.missing_perms:
+            permValues = permValues+ f"{perm}\n"
+        botPermEmbed.add_field(name="Missing Permission(s):",value=permValues,inline=False)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=botPermEmbed)
+        return
+    elif isinstance(error, commands.MissingPermissions):
+        botPermEmbed = discord.Embed(title='ERROR',description='You are missing the required permission(s).',color=0x992D22)
+        permValues = ''
+        for perm in error.missing_perms:
+            permValues = permValues+ f"{perm}\n"
+        botPermEmbed.add_field(name="Missing Permission(s):",value=permValues,inline=False)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=botPermEmbed)
+        return
+    else:
+        errorEmbed = discord.Embed(title='ERROR',description=error,color=0x992D22)
+        errorEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        errorEmbed.set_thumbnail(url=bot.user.avatar_url)
+        await ctx.send(embed=errorEmbed)
+
+
 # The commands
 
  # Owner commands
@@ -124,6 +168,206 @@ async def _serverinfoowner(ctx,guild: commands.GuildConverter=None):
     await owner.send(embed=ginfoEmbed)
 
  # Slash commands:
+
+  # Moderation Category:
+
+@slash.slash(name='kick',description='Kicks a user.',options=[
+    create_option(
+        name='user',
+        description='The user you want to kick',
+        required=True,
+        option_type=6
+    ),
+    create_option(
+        name='reason',
+        description='The reason for the kick.',
+        required=False,
+        option_type=3
+    )
+])
+@has_permissions(kick_members=True)
+async def _kick(ctx, user: str, reason: str=None):
+        await user.kick(reason=reason)
+        kickEmbed = discord.Embed(title='Kick',description=f'{user.mention} has been kicked.',color=discord.Colour.random())
+        kickEmbed.set_thumbnail(url=user.avatar_url)
+        kickEmbed.add_field(name='Reason:',value=reason)
+        await ctx.send(embed=kickEmbed)
+        kickEmbed = discord.Embed(title='Kick',description=f'{user.mention} has been kicked.',color=discord.Colour.random())
+        kickEmbed.set_thumbnail(url=ctx.guild.icon_url)
+        kickEmbed.add_field(name='Reason:',value=reason)
+        kickEmbed.add_field(name='Server:',value=ctx.guild.name)
+        await user.send(embed=kickEmbed)
+
+@slash.slash(name='lockchannel',description='Locks the channel',options=[
+    create_option(
+        name='channel',
+        description='Specify a channel (leave blank for current)',
+        required=False,
+        option_type=7
+    )
+])
+@has_permissions(manage_channels=True)
+async def _lockchannel(ctx, channel: str):
+    channel = channel or ctx.channel
+    overwrite=channel.overwrites_for(ctx.guild.default_role)
+    overwrite.send_messages = False
+    await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
+    await ctx.send("Channel locked. :lock:")
+
+@slash.slash(name='unlockchannel',description='Unlocks the channel',options=[
+    create_option(
+        name='channel',
+        description='Specify a channel (leave blank for current)',
+        required=False,
+        option_type=7
+    )
+])
+@has_permissions(manage_channels=True)
+async def _unlockchannel(ctx, channel: str):
+    channel = channel or ctx.channel
+    overwrite=channel.overwrites_for(ctx.guild.default_role)
+    overwrite.send_messages = True
+    await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
+    await ctx.send("Channel unlocked. :unlock:")
+    
+@slash.slash(name='mute',description='Mutes a user',options=[
+    create_option(
+        name='user',
+        description='The user you want to mute',
+        required=True,
+        option_type=6
+    ),
+    create_option(
+        name='reason',
+        description='The reason for the mute.',
+        required=False,
+        option_type=3
+    )
+])
+@has_permissions(manage_roles=True)
+async def _mute(ctx,user: str, reason: str=None):
+    guild = ctx.guild
+    roles = await guild.fetch_roles()
+    channels = await guild.fetch_channels()
+
+    for discord.Role in roles:
+        if discord.Role.name.upper() == "MUTED":
+            await user.add_roles(discord.Role)
+            await user.add_roles(discord.Role)
+            muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
+            muteEmbed.set_thumbnail(url=user.avatar_url)
+            muteEmbed.add_field(name='Reason:',value=reason)
+            await ctx.send(embed=muteEmbed)
+            muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
+            muteEmbed.set_thumbnail(url=ctx.guild.icon_url)
+            muteEmbed.add_field(name='Reason:',value=reason)
+            muteEmbed.add_field(name='Server:',value=ctx.guild.name)
+            await user.send(embed=muteEmbed)
+            return
+        
+    msg = await ctx.send("Please wait while I setup a muted role.")
+    permissions = discord.Permissions(permissions=0,send_message=False,speak=False)
+    role =  await guild.create_role(name='Muted',reason='Muted role was not found, so I made one.',permissions=permissions)
+    for discord.TextChannel in channels:
+        await discord.TextChannel.set_permissions(role,send_message=False)
+    for discord.VoiceChannel in channels:
+        await discord.VoiceChannel.set_permissiosn(role,speak=False)
+    
+    await user.add_roles(role)
+    muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
+    muteEmbed.set_thumbnail(url=user.avatar_url)
+    muteEmbed.add_field(name='Reason:',value=reason)
+    await msg.edit(embed=muteEmbed)
+    muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
+    muteEmbed.set_thumbnail(url=ctx.guild.icon_url)
+    muteEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+    muteEmbed.add_field(name='Reason:',value=reason)
+    muteEmbed.add_field(name='Server:',value=ctx.guild.name)
+    await user.send(embed=muteEmbed)
+
+@slash.slash(name='unmute',description='Unmutes a user',options=[
+    create_option(
+        name='user',
+        description='The user you want to unmute',
+        required=True,
+        option_type=6
+    )
+])
+@has_permissions(manage_roles=True)
+async def _unmute(ctx, user: str):
+    roles = user.roles
+
+    for discord.Role in roles:
+        if discord.Role.name.upper() == "MUTED":
+            await user.remove_roles(discord.Role,reason="Unmuting the user.")
+            unmuteEmbed = discord.Embed(title='Unmute',description=f'Unmuted {user.mention}',color=discord.Colour.random())
+            unmuteEmbed.set_thumbnail(url=user.avatar_url)
+            await ctx.send(embed=unmuteEmbed)
+            unmuteEmbed = discord.Embed(title='Unmute',description=f'Unmuted {user.mention}',color=discord.Colour.random())
+            unmuteEmbed.set_thumbnail(url=ctx.guild.icon_url)
+            unmuteEmbed.add_field(name='Server:',value=ctx.guild.name)
+            await user.send(embed=unmuteEmbed)
+            return
+
+    await ctx.send(f"{user.mention} is not muted!")
+
+@slash.slash(name='ban',description='Bans a user.',options=[
+    create_option(
+        name='user',
+        description='The user you want to ban',
+        required=True,
+        option_type=6
+    ),
+    create_option(
+        name='reason',
+        description='The reason for the ban.',
+        required=False,
+        option_type=3
+    )
+])
+@has_permissions(ban_members=True)
+async def _ban(ctx, user: str, reason: str=None):
+    await user.ban(reason=reason)
+
+    banEmbed = discord.Embed(title='Ban',description=f'{user.mention} has been banned.', color=discord.Colour.random())
+    banEmbed.set_thumbnail(url=user.avatar_url)
+    banEmbed.add_field(name='Reason:',value=reason)
+    await ctx.send(embed=banEmbed)
+    banEmbed = discord.Embed(title='Ban',description=f'{user.mention} has been banned.', color=discord.Colour.random())
+    banEmbed.set_thumbnail(url=ctx.guild.icon_url)
+    banEmbed.add_field(name='Reason:',value=reason)
+    banEmbed.add_field(name='Server:',value=ctx.guild.name)
+    await user.send(embed=banEmbed)
+
+@slash.slash(name='slowmode',description='Adds slowmode to a channel',options=[
+    create_option(
+        name='seconds',
+        description='The length of the slowmode (Limit is 21600)',
+        required=True,
+        option_type=4
+    )
+])
+@has_permissions(manage_channels=True)
+async def _slowmode(ctx, seconds: int):
+    await ctx.channel.edit(slowmode_delay=seconds)
+    slowEmbed = discord.Embed(title='Slowmode',description=f'Slowmode is now on **{seconds}** seconds.',color=discord.Colour.random())
+    slowEmbed.set_thumbnail(url=bot.user.avatar_url)
+    await ctx.send(embed=slowEmbed)
+
+@slash.slash(name='clear',description='Clears a certain amount of messages',options=[
+    create_option(
+        name='amount',
+        description='The amount of messages you want deleted',
+        required=True,
+        option_type=4
+    )
+])
+@has_permissions(manage_messages=True)
+async def _clear(ctx, amount: int):
+    await ctx.channel.purge(limit=amount)
 
   # Information Category:
 
