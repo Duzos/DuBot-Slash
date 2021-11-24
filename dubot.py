@@ -49,7 +49,7 @@ async def statusChange():
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
     except Exception as e:
         owner = bot.get_user(ownerID)
-        owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
+        await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
 
 # TopGG Stuff (Remove if you dont have TopGG)
 @tasks.loop(minutes=30)
