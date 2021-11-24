@@ -4,7 +4,9 @@
  <a href="https://top.gg/bot/900481597311172660">
   <img src="https://top.gg/api/widget/900481597311172660.svg">
 </a>
- 
+<br>
+<img src="https://discordapp.com/api/guilds/884845702662996068/widget.png?style=banner3" alt="Discord Banner"/>
+
 <h1>Guide</h1>
 <h2>Requirements</h2>
 <ul>
