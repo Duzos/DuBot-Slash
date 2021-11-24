@@ -138,7 +138,7 @@ async def _shutdown(ctx):
 @commands.is_owner()
 async def _restart(ctx):
     await ctx.send("See you soon!")
-    await bot.change_presence(status=discord.Status.invisible)
+    await bot.change_presence(activity=discord.Game("Restarting."))
     os.execv(sys.executable, ['python'] + sys.argv)
 
 @bot.command(name='server_list',description='Gets the list of servers the bot is in.')
@@ -207,7 +207,7 @@ async def _kick(ctx, user: str, reason: str=None):
     )
 ])
 @has_permissions(manage_channels=True)
-async def _lockchannel(ctx, channel: str):
+async def _lockchannel(ctx, channel: str=None):
     channel = channel or ctx.channel
     overwrite=channel.overwrites_for(ctx.guild.default_role)
     overwrite.send_messages = False
@@ -223,7 +223,7 @@ async def _lockchannel(ctx, channel: str):
     )
 ])
 @has_permissions(manage_channels=True)
-async def _unlockchannel(ctx, channel: str):
+async def _unlockchannel(ctx, channel: str=None):
     channel = channel or ctx.channel
     overwrite=channel.overwrites_for(ctx.guild.default_role)
     overwrite.send_messages = True
@@ -368,7 +368,8 @@ async def _slowmode(ctx, seconds: int):
 @has_permissions(manage_messages=True)
 async def _clear(ctx, amount: int):
     await ctx.channel.purge(limit=amount)
-
+    msg = await ctx.send("Clear complete.")
+    await msg.delete()
   # Information Category:
 
 @slash.slash(name='bitcoin',description='Tells you the current value of Bitcoin.',options=[
@@ -475,7 +476,8 @@ async def _channelinfo(ctx, channel:str):
 @slash.slash(name='invite',description='Gives you the bots invite')
 async def _invite(ctx):
         inviteEmbed = discord.Embed(title="Invite Link",description="[Bot Invite](https://discord.com/api/oauth2/authorize?client_id=900481597311172660&permissions=0&scope=bot%20applications.commands)",color=discord.Colour.random())
-        inviteEmbed.add_field(name='Support Server',value="[Server Invite](https://discord.gg/Raakw6367z)")
+        inviteEmbed.add_field(name='Support Server',value="[Server Invite](https://discord.gg/Raakw6367z)",inline=False)
+        inviteEmbed.add_field(name='Get Dubot!',value="[Dubot Invite](https://discord.com/api/oauth2/authorize?client_id=865190020179296267&permissions=0&scope=bot%20applications.commands)",inline=False)
         await ctx.send(embed=inviteEmbed)
 
   # Fun category
