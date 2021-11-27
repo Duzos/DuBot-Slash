@@ -42,17 +42,12 @@ bot.remove_command('help')
 # When the bot starts
 @bot.event
 async def on_ready():
-    statusChange.start()
-    print(f'{bot.user.name} is ready!')
-
-# Update the status every 30 minutes.
-@tasks.loop(minutes=30)
-async def statusChange():
     try:
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
     except Exception as e:
         owner = bot.get_user(ownerID)
         await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
+    print(f'{bot.user.name} is ready!')
 
 # TopGG Stuff (Remove if you dont have TopGG)
 @tasks.loop(minutes=30)
@@ -81,6 +76,24 @@ async def on_dbl_vote(data):
     voteEmbed = discord.Embed(title=f'Thank you for voting for {bot.user.name}!',description=f'Thank you for voting {user.mention}',color=discord.Colour.random())
     voteEmbed.set_thumbnail(url="https://clipart.info/images/ccovers/1518056315Dark-Red-Heart-Transparent-Background.png")
     await user.send(embed=voteEmbed)
+
+# Guild amount status
+@bot.event
+async def on_guild_join(guild):
+    try:
+        await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
+    except Exception as e:
+        owner = bot.get_user(ownerID)
+        await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
+
+@bot.event
+async def on_guild_leave(guild):
+    try:
+        await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
+    except Exception as e:
+        owner = bot.get_user(ownerID)
+        await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
+
 
 # Handling Errors.
 @bot.event
