@@ -6,7 +6,7 @@ from discord.embeds import EmptyEmbed
 from discord.ext import commands
 from discord.ext import tasks
 from discord.ext.commands.converter import _get_from_guilds
-from discord.ext.commands.core import has_permissions
+from discord.ext.commands.core import has_permissions, is_nsfw
 from discord.ext.commands.core import MissingPermissions
 from discord.ext.commands.core import BotMissingPermissions
 from discord_slash import SlashCommand,SlashContext
@@ -17,6 +17,8 @@ import os
 import sys
 import requests
 import random
+from datetime import datetime
+import praw
 
 # Setting up the Bot.
 intents = discord.Intents.default()
@@ -30,6 +32,10 @@ token = config['token']
 guildIDs = config['guildIDs']
 ownerID = config['ownerID']
 topToken = config['topToken']
+redditID = config['redditID']
+redditSecret = config['redditSecret']
+redditAgent = config['redditAgent']
+reddit = praw.Reddit(client_id=redditID,client_secret=redditSecret,user_agent=redditAgent,check_for_async=False)
 
 bot = commands.Bot(command_prefix="db.", intents=intents, case_insensitive=True)
 slash = SlashCommand(bot,sync_commands=True)
@@ -47,6 +53,7 @@ async def on_ready():
     except Exception as e:
         owner = bot.get_user(ownerID)
         await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
+    bot.start_time = datetime.utcnow()
     print(f'{bot.user.name} is ready!')
 
 # TopGG Stuff (Remove if you dont have TopGG)
@@ -79,7 +86,7 @@ async def on_dbl_vote(data):
 
 # Guild amount status
 @bot.event
-async def on_guild_join(guild):
+async def on_guild_join():
     try:
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
     except Exception as e:
@@ -87,7 +94,7 @@ async def on_guild_join(guild):
         await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
 
 @bot.event
-async def on_guild_leave(guild):
+async def on_guild_leave():
     try:
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
     except Exception as e:
@@ -133,6 +140,7 @@ async def on_command_error(ctx, error):
             icon_url=ctx.message.author.avatar_url
         )
         errorEmbed.set_thumbnail(url=bot.user.avatar_url)
+        errorEmbed.add_field(name="Bug?",value="Please report this error using /bug if you think its a bug.")
         await ctx.send(embed=errorEmbed)
 
 
@@ -157,7 +165,10 @@ async def _restart(ctx):
 @bot.command(name='server_list',description='Gets the list of servers the bot is in.')
 @commands.is_owner()
 async def _serverList(ctx):
-    await ctx.message.delete()
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        pass
     list = ""
     for guild in bot.guilds:
         list += f"{guild.name}: {guild.id}\n"
@@ -167,7 +178,10 @@ async def _serverList(ctx):
 @bot.command(name='server_info_owner',description='Sends information on a server the bot is.')
 @commands.is_owner()
 async def _serverinfoowner(ctx,guild: commands.GuildConverter=None):
-    await ctx.message.delete()
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        pass
     owner = bot.get_user(ownerID)
     guild = guild or ctx.guild
 
@@ -200,16 +214,29 @@ async def _serverinfoowner(ctx,guild: commands.GuildConverter=None):
 ])
 @has_permissions(kick_members=True)
 async def _kick(ctx, user: str, reason: str=None):
+    try:
         await user.kick(reason=reason)
-        kickEmbed = discord.Embed(title='Kick',description=f'{user.mention} has been kicked.',color=discord.Colour.random())
-        kickEmbed.set_thumbnail(url=user.avatar_url)
-        kickEmbed.add_field(name='Reason:',value=reason)
-        await ctx.send(embed=kickEmbed)
-        kickEmbed = discord.Embed(title='Kick',description=f'{user.mention} has been kicked.',color=discord.Colour.random())
-        kickEmbed.set_thumbnail(url=ctx.guild.icon_url)
-        kickEmbed.add_field(name='Reason:',value=reason)
-        kickEmbed.add_field(name='Server:',value=ctx.guild.name)
-        await user.send(embed=kickEmbed)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
+    kickEmbed = discord.Embed(title='Kick',description=f'{user.mention} has been kicked.',color=discord.Colour.random())
+    kickEmbed.set_thumbnail(url=user.avatar_url)
+    kickEmbed.add_field(name='Reason:',value=reason)
+    await ctx.send(embed=kickEmbed)
+    kickEmbed = discord.Embed(title='Kick',description=f'{user.mention} has been kicked.',color=discord.Colour.random())
+    kickEmbed.set_thumbnail(url=ctx.guild.icon_url)
+    kickEmbed.add_field(name='Reason:',value=reason)
+    kickEmbed.add_field(name='Server:',value=ctx.guild.name)
+    await user.send(embed=kickEmbed)
 
 @slash.slash(name='lockchannel',description='Locks the channel',options=[
     create_option(
@@ -224,7 +251,20 @@ async def _lockchannel(ctx, channel: str=None):
     channel = channel or ctx.channel
     overwrite=channel.overwrites_for(ctx.guild.default_role)
     overwrite.send_messages = False
-    await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
+    try:
+        await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
     await ctx.send("Channel locked. :lock:")
 
 @slash.slash(name='unlockchannel',description='Unlocks the channel',options=[
@@ -240,7 +280,20 @@ async def _unlockchannel(ctx, channel: str=None):
     channel = channel or ctx.channel
     overwrite=channel.overwrites_for(ctx.guild.default_role)
     overwrite.send_messages = True
-    await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
+    try:
+        await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
     await ctx.send("Channel unlocked. :unlock:")
     
 @slash.slash(name='mute',description='Mutes a user',options=[
@@ -265,8 +318,20 @@ async def _mute(ctx,user: str, reason: str=None):
 
     for discord.Role in roles:
         if discord.Role.name.upper() == "MUTED":
-            await user.add_roles(discord.Role)
-            await user.add_roles(discord.Role)
+            try:
+                await user.add_roles(discord.Role)
+            except discord.Forbidden:
+                botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+                botPermEmbed.set_author(
+                    name=ctx.message.author.name,
+                    icon_url=ctx.message.author.avatar_url
+                )
+                botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+                try:
+                    await ctx.reply(embed=botPermEmbed)
+                except:
+                    await ctx.send(embed=botPermEmbed)
+                return
             muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
             muteEmbed.set_thumbnail(url=user.avatar_url)
             muteEmbed.add_field(name='Reason:',value=reason)
@@ -280,13 +345,38 @@ async def _mute(ctx,user: str, reason: str=None):
         
     msg = await ctx.send("Please wait while I setup a muted role.")
     permissions = discord.Permissions(permissions=0,send_message=False,speak=False)
-    role =  await guild.create_role(name='Muted',reason='Muted role was not found, so I made one.',permissions=permissions)
+    try:
+        role =  await guild.create_role(name='Muted',reason='Muted role was not found, so I made one.',permissions=permissions)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
     for discord.TextChannel in channels:
         await discord.TextChannel.set_permissions(role,send_message=False)
     for discord.VoiceChannel in channels:
         await discord.VoiceChannel.set_permissiosn(role,speak=False)
-    
-    await user.add_roles(role)
+    try:
+        await user.add_roles(role)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
     muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
     muteEmbed.set_thumbnail(url=user.avatar_url)
     muteEmbed.add_field(name='Reason:',value=reason)
@@ -315,7 +405,20 @@ async def _unmute(ctx, user: str):
 
     for discord.Role in roles:
         if discord.Role.name.upper() == "MUTED":
-            await user.remove_roles(discord.Role,reason="Unmuting the user.")
+            try:
+                await user.remove_roles(discord.Role,reason="Unmuting the user.")
+            except discord.Forbidden:
+                botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+                botPermEmbed.set_author(
+                    name=ctx.message.author.name,
+                    icon_url=ctx.message.author.avatar_url
+                )
+                botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+                try:
+                    await ctx.reply(embed=botPermEmbed)
+                except:
+                    await ctx.send(embed=botPermEmbed)
+                return
             unmuteEmbed = discord.Embed(title='Unmute',description=f'Unmuted {user.mention}',color=discord.Colour.random())
             unmuteEmbed.set_thumbnail(url=user.avatar_url)
             await ctx.send(embed=unmuteEmbed)
@@ -343,7 +446,20 @@ async def _unmute(ctx, user: str):
 ])
 @has_permissions(ban_members=True)
 async def _ban(ctx, user: str, reason: str=None):
-    await user.ban(reason=reason)
+    try:
+        await user.ban(reason=reason)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
 
     banEmbed = discord.Embed(title='Ban',description=f'{user.mention} has been banned.', color=discord.Colour.random())
     banEmbed.set_thumbnail(url=user.avatar_url)
@@ -365,7 +481,20 @@ async def _ban(ctx, user: str, reason: str=None):
 ])
 @has_permissions(manage_channels=True)
 async def _slowmode(ctx, seconds: int):
-    await ctx.channel.edit(slowmode_delay=seconds)
+    try:
+        await ctx.channel.edit(slowmode_delay=seconds)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
     slowEmbed = discord.Embed(title='Slowmode',description=f'Slowmode is now on **{seconds}** seconds.',color=discord.Colour.random())
     slowEmbed.set_thumbnail(url=bot.user.avatar_url)
     await ctx.send(embed=slowEmbed)
@@ -380,10 +509,33 @@ async def _slowmode(ctx, seconds: int):
 ])
 @has_permissions(manage_messages=True)
 async def _clear(ctx, amount: int):
-    await ctx.channel.purge(limit=amount)
+    try:
+        await ctx.channel.purge(limit=amount)
+    except discord.Forbidden:
+        botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
+        botPermEmbed.set_author(
+            name=ctx.message.author.name,
+            icon_url=ctx.message.author.avatar_url
+        )
+        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
+        try:
+            await ctx.reply(embed=botPermEmbed)
+        except:
+            await ctx.send(embed=botPermEmbed)
+        return
     msg = await ctx.send("Clear complete.")
     await msg.delete()
   # Information Category:
+
+@slash.slash(name='uptime',description='Tells you how long the bot has been online.')
+async def _uptime(ctx):
+    delta_uptime = datetime.utcnow() - bot.start_time
+    hours, remainder = divmod(int(delta_uptime.total_seconds()), 3600)
+    minutes, seconds = divmod(remainder, 60)
+    days, hours = divmod(hours, 24)
+    uptimeEmbed = discord.Embed(title='Uptime',description=f"{days}d, {hours}h, {minutes}m, {seconds}s",color=discord.Color.random())
+    uptimeEmbed.set_thumbnail(url=bot.user.avatar_url)
+    await ctx.send(embed=uptimeEmbed)
 
 @slash.slash(name='bitcoin',description='Tells you the current value of Bitcoin.',options=[
     create_option(
@@ -438,11 +590,12 @@ async def _avatar(ctx, user: str):
 ])
 async def _userinfo(ctx, user:str):
         rolelist = [r.name for r in user.roles if r != ctx.guild.default_role]
+        permissionList = ', '.join([perm[0] for perm in user.guild_permissions if perm[1]])
         roles = ", ".join(rolelist)
         if roles == "":
             roles=None
         date_format = "%a, %d %b %Y %I:%M %p"
-        uinfoEmbed = discord.Embed(title=f'Info on {user.name}#{user.discriminator}', description=f'**ID:**\n```{user.id}```\n**Roles:**\n```{roles}```\n**Account Created On:**\n```{user.created_at.strftime(date_format)}```\n**Account Joined Guild On:**\n```{user.joined_at.strftime(date_format)}```\n**Nickname:**\n```{user.nick}```\n**Is Bot:**\n```{user.bot}```',color=discord.Colour.random())
+        uinfoEmbed = discord.Embed(title=f'Info on {user.name}#{user.discriminator}', description=f'**ID:**\n```{user.id}```\n**Roles:**\n```{roles}```\n**Account Created On:**\n```{user.created_at.strftime(date_format)}```\n**Account Joined Guild On:**\n```{user.joined_at.strftime(date_format)}```\n**Nickname:**\n```{user.nick}```\n**Is Bot:**\n```{user.bot}```\n**Permissions:**\n```{permissionList}```',color=discord.Colour.random())
         uinfoEmbed.set_thumbnail(url=user.avatar_url)
         await ctx.send(embed=uinfoEmbed)
 
@@ -468,8 +621,9 @@ async def _guildinfo(ctx):
 async def _roleinfo(ctx,role:str):
         date_format = "%a, %d %b %Y %I:%M %p"
         memberList = ", ".join([str(m.name) for m in role.members])
+        permissionList = ', '.join([perm[0] for perm in role.permissions if perm[1]])
 
-        rinfoEmbed = discord.Embed(title=f'Info on {role.name}',description=f'**ID:**\n```{role.id}```\n**Can be Mentioned:**\n```{role.mentionable}```\n**Position:**\n```{role.position}```\n**Role Created On:**\n```{role.created_at.strftime(date_format)}```\n**Colour:**\n```{role.colour}```\n**Members:**\n```{memberList}```',color=role.colour)
+        rinfoEmbed = discord.Embed(title=f'Info on {role.name}',description=f'**ID:**\n```{role.id}```\n**Can be Mentioned:**\n```{role.mentionable}```\n**Position:**\n```{role.position}```\n**Role Created On:**\n```{role.created_at.strftime(date_format)}```\n**Colour:**\n```{role.colour}```\n**Permissions:**\n```{permissionList}```\n**Members:**\n```{memberList}```',color=role.colour)
         await ctx.send(embed=rinfoEmbed)
 
 @slash.slash(name='channel_info',description='Gives you information on a channel.',options=[
@@ -494,6 +648,59 @@ async def _invite(ctx):
         await ctx.send(embed=inviteEmbed)
 
   # Fun category
+
+@slash.slash(name='randomreddit',description='Gets posts from a random subreddit.')
+async def _randomreddit(ctx):
+    sb_random = reddit.random_subreddit()
+    sb_submissions=sb_random.hot()
+    post_to_pick = random.randint(1,20)
+    for i in range(0,post_to_pick):
+        submission = next(x for x in sb_submissions if not x.stickied)
+
+
+    sb_extension = submission.url[len(submission.url) - 3 :].lower()
+    if sb_extension == "jpg" or sb_extension == "png" or sb_extension == "gif":
+        sbEmbed = discord.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})',color=discord.Colour.random(),type='image')
+        sbEmbed.set_image(url=submission.url)
+        await ctx.send(embed=sbEmbed)
+        return
+    sbEmbed = discord.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})',color=discord.Colour.random())
+    await ctx.send(embed=sbEmbed)
+
+@slash.slash(name='subreddit',description='Get posts from a subreddit.',options=[
+    create_option(
+        name='subreddit',
+        description='The subreddit you want found.',
+        required=True,
+        option_type=3
+    )
+])
+async def _subreddit(ctx, subreddit):
+    sb_submissions = reddit.subreddit(subreddit).hot()
+    post_to_pick = random.randint(1,20)
+    for i in range(0,post_to_pick):
+        submission = next(x for x in sb_submissions if not x.stickied)
+
+    sb_extension = submission.url[len(submission.url) - 3 :].lower()
+    if sb_extension == "jpg" or sb_extension == "png" or sb_extension == "gif":
+        sbEmbed = discord.Embed(title=subreddit,description=f'[{submission.title}]({submission.url})',color=discord.Colour.random(),type='image')
+        sbEmbed.set_image(url=submission.url)
+        await ctx.send(embed=sbEmbed)
+        return
+    sbEmbed = discord.Embed(title=subreddit,description=f'[{submission.title}]({submission.url})',color=discord.Colour.random())
+    await ctx.send(embed=sbEmbed)
+
+@slash.slash(name='meme',description='Sends a random meme.')
+async def _meme(ctx):
+    memes_submissions = reddit.subreddit('memes').hot()
+    post_to_pick = random.randint(1, 10)
+    for i in range(0, post_to_pick):
+        submission = next(x for x in memes_submissions if not x.stickied)
+
+    memeEmbed = discord.Embed(title='Meme',color=discord.Colour.random(),type='image')
+    memeEmbed.set_image(url=submission.url)
+    memeEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
+    await ctx.send(embed=memeEmbed)
 
 @slash.slash(name='random_name',description='Gives you a random name.')
 async def _randomname(ctx):
@@ -863,6 +1070,25 @@ async def _8ball(ctx,question: str):
         await ctx.send(embed=ballEmbed)
 
    # Other category
+
+@slash.slash(name='nsfwreddit',description='Gets posts from a random nsfw subreddit.')
+@is_nsfw()
+async def _nsfwreddit(ctx):
+    sb_random = reddit.random_subreddit(nsfw=True)
+    sb_submissions=sb_random.hot()
+    post_to_pick = random.randint(1,20)
+    for i in range(0,post_to_pick):
+        submission = next(x for x in sb_submissions if not x.stickied)
+
+
+    sb_extension = submission.url[len(submission.url) - 3 :].lower()
+    if sb_extension == "jpg" or sb_extension == "png" or sb_extension == "gif":
+        sbEmbed = discord.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})',color=discord.Colour.random(),type='image')
+        sbEmbed.set_image(url=submission.url)
+        await ctx.send(embed=sbEmbed)
+        return
+    sbEmbed = discord.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})',color=discord.Colour.random())
+    await ctx.send(embed=sbEmbed)
 
 @slash.slash(name='vote',description=f'vote for this bot.')
 async def _vote(ctx):
