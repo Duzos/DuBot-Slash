@@ -1049,7 +1049,6 @@ async def _8ball(ctx,question: str):
 ])
 @is_nsfw()
 async def _nsfw(ctx, request: str=None):
-    await ctx.trigger_typing()
     if request == None:
         nsfwJson = requests.get("http://api.rule34.xxx//index.php?page=dapi&s=post&q=index&json=1").json()
     else:
@@ -1069,7 +1068,6 @@ async def _nsfw(ctx, request: str=None):
         nsfwPreview = chosenKey["preview_url"]
         nsfwEmbed = discord.Embed(title="Click description for full video.",description=f"[{request}]({nsfwFile})",color=discord.Colour.random(),type='image')
         nsfwEmbed.set_image(url=nsfwPreview)
-        nsfwEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
         nsfwEmbed.add_field(name='Tags:',value=tagMessage)
         nsfwEmbed.set_footer(text=f"ID: {nsfwID} | API by api.rule34.xxx")
         await ctx.reply(embed=nsfwEmbed)
@@ -1077,7 +1075,6 @@ async def _nsfw(ctx, request: str=None):
     if nsfw_extension == "jpg" or nsfw_extension == "peg" or nsfw_extension == "png" or nsfw_extension == "gif":
         nsfwEmbed = discord.Embed(title="NSFW",description=f'[{request}]({nsfwFile})',color=discord.Colour.random(),type='image')
         nsfwEmbed.set_image(url=nsfwFile)
-        nsfwEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
         nsfwEmbed.add_field(name='Tags:',value=tagMessage)
         nsfwEmbed.set_footer(text=f"ID: {nsfwID} | API by api.rule34.xxx")
         await ctx.reply(embed=nsfwEmbed)
