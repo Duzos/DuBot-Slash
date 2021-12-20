@@ -162,38 +162,6 @@ async def _restart(ctx):
     await bot.change_presence(activity=discord.Game("Restarting."))
     os.execv(sys.executable, ['python'] + sys.argv)
 
-@bot.command(name='server_list',description='Gets the list of servers the bot is in.')
-@commands.is_owner()
-async def _serverList(ctx):
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        pass
-    list = ""
-    for guild in bot.guilds:
-        list += f"{guild.name}: {guild.id}\n"
-    owner = bot.get_user(ownerID)
-    await owner.send(list)
-
-@bot.command(name='server_info_owner',description='Sends information on a server the bot is.')
-@commands.is_owner()
-async def _serverinfoowner(ctx,guild: commands.GuildConverter=None):
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        pass
-    owner = bot.get_user(ownerID)
-    guild = guild or ctx.guild
-
-    date_format = "%a, %d %b %Y %I:%M %p"
-
-    roleList = ", ".join([str(r.name) for r in guild.roles])
-
-    ginfoEmbed = discord.Embed(title=f'Info on {guild.name}',description=f'**Description:**\n```{guild.description}```\n**Member Count:**\n```{guild.member_count}```\n**Owner:**\n```{guild.owner}```\n**Roles:**\n```{roleList}```\n**Boost Level:**\n```{guild.premium_tier}```\n**Boost Count:**\n```{guild.premium_subscription_count}```\n**ID:**\n```{guild.id}```\n**Guild Created On:**\n```{guild.created_at.strftime(date_format)}```\n**Region:**\n```{guild.region}```',color=discord.Colour.random())
-    ginfoEmbed.set_thumbnail(url=guild.icon_url)
-    ginfoEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
-    await owner.send(embed=ginfoEmbed)
-
  # Slash commands:
 
   # Moderation Category:
@@ -1070,6 +1038,52 @@ async def _8ball(ctx,question: str):
         await ctx.send(embed=ballEmbed)
 
    # Other category
+
+@slash.slash(name='nsfw',description='Finds a nsfw image of what you request.',options=[
+    create_option(
+        name='request',
+        description='Your nsfw request.',
+        required=False,
+        option_type=3
+    )
+])
+@is_nsfw()
+async def _nsfw(ctx, request: str=None):
+    await ctx.trigger_typing()
+    if request == None:
+        nsfwJson = requests.get("http://api.rule34.xxx//index.php?page=dapi&s=post&q=index&json=1").json()
+    else:
+        nsfwJson = requests.get("http://api.rule34.xxx//index.php?page=dapi&s=post&q=index&json=1&tags="+request).json()
+    chosenKey = random.choice(nsfwJson)
+    nsfwFile = chosenKey["file_url"]
+    nsfwID = chosenKey["id"]
+    nsfwTags = chosenKey["tags"].split()
+
+    tagMessage = ""
+    for i in nsfwTags:
+        tagMessage = tagMessage + f"`{i}` "
+
+
+    nsfw_extension = nsfwFile[len(nsfwFile) - 3 :].lower()
+    if nsfw_extension == "mp4":
+        nsfwPreview = chosenKey["preview_url"]
+        nsfwEmbed = discord.Embed(title="Click description for full video.",description=f"[{request}]({nsfwFile})",color=discord.Colour.random(),type='image')
+        nsfwEmbed.set_image(url=nsfwPreview)
+        nsfwEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
+        nsfwEmbed.add_field(name='Tags:',value=tagMessage)
+        nsfwEmbed.set_footer(text=f"ID: {nsfwID} | API by api.rule34.xxx")
+        await ctx.reply(embed=nsfwEmbed)
+        return
+    if nsfw_extension == "jpg" or nsfw_extension == "peg" or nsfw_extension == "png" or nsfw_extension == "gif":
+        nsfwEmbed = discord.Embed(title="NSFW",description=f'[{request}]({nsfwFile})',color=discord.Colour.random(),type='image')
+        nsfwEmbed.set_image(url=nsfwFile)
+        nsfwEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
+        nsfwEmbed.add_field(name='Tags:',value=tagMessage)
+        nsfwEmbed.set_footer(text=f"ID: {nsfwID} | API by api.rule34.xxx")
+        await ctx.reply(embed=nsfwEmbed)
+        return
+    await ctx.reply("An error occured while trying to get data from the API.")
+            
 
 @slash.slash(name='nsfwreddit',description='Gets posts from a random nsfw subreddit.')
 @is_nsfw()
