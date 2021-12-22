@@ -19,7 +19,6 @@ import requests
 import random
 from datetime import datetime
 import praw
-
 # Setting up the Bot.
 intents = discord.Intents.default()
 intents.presences = True
@@ -94,13 +93,62 @@ async def on_guild_join():
         await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
 
 @bot.event
-async def on_guild_leave():
+async def on_guild_remove():
     try:
         await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
     except Exception as e:
         owner = bot.get_user(ownerID)
         await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
 
+# Leave and Welcome messages
+@bot.event
+async def on_member_join(member: discord.Member):
+    guild = member.guild
+
+    with open('json/data.json','r') as f:
+        jsonData = json.load(f)
+
+    guildID = str(guild.id)
+    try:
+        choice = jsonData[f"{guildID} welcome"]
+    except:
+        return
+    if choice == "False":
+        return
+    elif choice == "True":
+        welcomeEmbed = discord.Embed(title='New Member', description=f'{member.mention} joined',color=discord.Colour.random())
+        welcomeEmbed.set_thumbnail(url=member.avatar_url)
+        welcomeEmbed.set_author(
+            name=bot.user.display_name,
+            icon_url=bot.user.avatar_url
+        )
+        await bot.get_channel(jsonData[f"{guildID} welcomeChannel"]).send(embed=welcomeEmbed)
+        return
+    
+@bot.event
+async def on_member_remove(member: discord.Member):
+    guild = member.guild
+
+    with open('json/data.json','r') as f:
+        jsonData = json.load(f)
+
+    guildID = str(guild.id)
+    try:
+        choice = jsonData[f"{guildID} leave"]
+    except:
+        return
+    if choice == "False":
+        return
+    elif choice == "True":
+        leaveEmbed = discord.Embed(title='Member Left', description=f'{member.mention} left',color=discord.Colour.random())
+        leaveEmbed.set_thumbnail(url=member.avatar_url)
+        leaveEmbed.set_author(
+            name=bot.user.display_name,
+            icon_url=bot.user.avatar_url
+        )
+        await bot.get_channel(jsonData[f"{guildID} leaveChannel"]).send(embed=leaveEmbed)
+        return
+    
 
 # Handling Errors.
 @bot.event
@@ -165,6 +213,101 @@ async def _restart(ctx):
  # Slash commands:
 
   # Moderation Category:
+
+@slash.slash(name='toggle_tickets',description='Turn tickets on or off.',options=[
+    create_option(
+        name='choice',
+        description='Whether you want it on or off.',
+        required=True,
+        option_type=3,
+        choices=[
+            create_choice(
+                name='Off',
+                value="False"
+            ),
+            create_choice(
+                name='On',
+                value="True"
+            )
+        ]
+    )
+])
+@has_permissions(manage_channels=True)
+async def _toggletickets(ctx, choice: str=None):
+    with open('json/data.json','r') as f:
+        jsonData = json.load(f)
+
+    guildID = str(ctx.guild.id)
+
+    if choice == "True":
+        choice = True
+        jsonData[f'{guildID} tickets'] = choice
+        await ctx.reply("Tickets are now on.")
+    elif choice == "False":
+        choice = False
+        jsonData[f'{guildID} tickets'] = choice
+        await ctx.reply("Tickets are now off.")
+    
+    with open('json/data.json','w') as f:
+        json.dump(jsonData, f, indent=4)
+    
+@slash.slash(name='create_ticket',description='Creates a support ticket if enabled.',options=[
+    create_option(
+        name='reason',
+        description='What you need help with',
+        required=False,
+        option_type=3
+    )
+])
+async def _createticket(ctx, reason: str=None):
+    guildID = str(ctx.guild.id)
+    guild = ctx.guild
+
+    with open('json/data.json','r') as f:
+        jsonData = json.load(f)
+    
+    if jsonData[f'{guildID} tickets'] == False:
+        return await ctx.reply("Tickets are turned off.")
+    
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(read_messages=False),
+        guild.me: discord.PermissionOverwrite(read_messages=True),
+        ctx.author: discord.PermissionOverwrite(read_messages=True)
+    }
+    try:
+        channel = await guild.create_text_channel(f'ticket-{ctx.author}', overwrites=overwrites,reason='Ticket System.')
+    except discord.Forbidden:
+        permsEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=discord.Colour.red())
+        permsEmbed.set_thumbnail(bot.user.avatar_url)
+        return await ctx.reply(embed=permsEmbed)
+
+    try:
+        message = await channel.send(ctx.author.mention)
+        await message.delete()
+    except discord.Forbidden:
+        pass
+
+    embed = discord.Embed(title='Ticket',description=f'Created by {ctx.author.mention}',color=discord.Colour.random())
+    embed.add_field(name='Reason:',value=reason)
+    await channel.send(embed=embed)
+    await ctx.reply("Ticket Created.")
+
+    message = await channel.send("React with :lock: to close the ticket.")
+    await message.add_reaction("🔒")
+
+    def check(reaction, user):
+        return str(reaction) == "🔒" and user != bot.user
+    await bot.wait_for("reaction_add",check=check)
+    
+    try:
+        await channel.set_permissions(ctx.author,reason='Ticket System',read_messages=False)
+    except discord.Forbidden:
+        permsEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=discord.Colour.red())
+        permsEmbed.set_thumbnail(bot.user.avatar_url)
+        return await ctx.reply(embed=permsEmbed)
+
+    await channel.send("Ticket Locked.")
+
 
 @slash.slash(name='kick',description='Kicks a user.',options=[
     create_option(
@@ -494,6 +637,12 @@ async def _clear(ctx, amount: int):
     msg = await ctx.send("Clear complete.")
     await msg.delete()
   # Information Category:
+
+@slash.slash(name='information',description='Tells you information on the bot.')
+async def _info(ctx):
+    embed = discord.Embed(title='discord.py | discord-interactions | python',description='by <@!327807253052653569>\n[Github Page](https://github.com/Duzos/DuBot-Slash)\n[Support Server](https://discord.gg/Raakw6367z)',color=discord.Colour.random())
+    embed.set_thumbnail(url="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c3/Python-logo-notext.svg/768px-Python-logo-notext.svg.png")
+    await ctx.reply(embed=embed)
 
 @slash.slash(name='uptime',description='Tells you how long the bot has been online.')
 async def _uptime(ctx):
@@ -1039,6 +1188,110 @@ async def _8ball(ctx,question: str):
 
    # Other category
 
+@slash.slash(name='welcome_option',description='Toggle welcome messages.',options=[
+    create_option(
+        name='choice',
+        description='Whether you want it on or off.',
+        required=True,
+        option_type=3,
+        choices=[
+            create_choice(
+                name='Off',
+                value="False"
+            ),
+            create_choice(
+                name='On',
+                value="True"
+            )
+        ]
+    ),
+    create_option(
+        name='channel',
+        description='The channel you want the welcome messages sent in.',
+        required=False,
+        option_type=7
+    )
+])
+@has_permissions(manage_channels=True)
+async def _welcomeoption(ctx,choice: str=None,channel: str=None):
+    with open('json/data.json', 'r') as f:
+        welcomeJson = json.load(f)
+
+    channel = channel or ctx.channel
+    idGuild = str(ctx.guild.id)
+
+    if choice == "False":
+        try:
+            welcomeJson[f"{idGuild} welcome"].pop()
+            welcomeJson[f"{idGuild} welcomeChannel"].pop()
+            await ctx.reply("Successfully disabled welcome messages.")
+            return
+        except:
+            await ctx.reply("Successfully disabled welcome messages.")
+            return
+
+    channelID = channel.id 
+
+    welcomeJson[f"{idGuild} welcome"] = choice
+    welcomeJson[f"{idGuild} welcomeChannel"] = channelID
+
+    with open('json/data.json','w') as f:
+        json.dump(welcomeJson, f, indent=4)
+
+    await ctx.reply("Successfully enabled welcome messages.")
+    
+@slash.slash(name='leave_option',description='Toggle leave messages.',options=[
+    create_option(
+        name='choice',
+        description='Whether you want it on or off.',
+        required=True,
+        option_type=3,
+        choices=[
+            create_choice(
+                name='Off',
+                value="False"
+            ),
+            create_choice(
+                name='On',
+                value="True"
+            )
+        ]
+    ),
+    create_option(
+        name='channel',
+        description='The channel you want the leave messages sent in.',
+        required=False,
+        option_type=7
+    )
+])
+@has_permissions(manage_channels=True)
+async def _leaveoption(ctx,choice: str=None,channel: str=None):
+    with open('json/data.json', 'r') as f:
+        leaveJson = json.load(f)
+
+    channel = channel or ctx.channel
+    idGuild = str(ctx.guild.id)
+
+    if choice == "False":
+        try:
+            leaveJson[f"{idGuild} leave"].pop()
+            leaveJson[f"{idGuild} leaveChannel"].pop()
+            await ctx.reply("Successfully disabled leave messages.")
+            return
+        except:
+            await ctx.reply("Successfully disabled leave messages.")
+            return
+
+    channelID = channel.id 
+
+    leaveJson[f"{idGuild} leave"] = choice
+    leaveJson[f"{idGuild} leaveChannel"] = channelID
+
+    with open('json/data.json','w') as f:
+        json.dump(leaveJson, f, indent=4)
+
+    await ctx.reply("Successfully enabled leave messages.")
+
 @slash.slash(name='nsfw',description='Finds a nsfw image of what you request.',options=[
     create_option(
         name='request',
@@ -1222,8 +1475,6 @@ async def _idea(ctx,idea: str):
     confirmEmbed.add_field(name='Idea:',value=idea)
     confirmEmbed.set_footer(text='Thank you for your ideas!')
     await ctx.send(embed=confirmEmbed)
-
-
 
 # Run the bot
 bot.run(token)
