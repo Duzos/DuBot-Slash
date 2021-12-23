@@ -1457,10 +1457,6 @@ async def _idea(ctx,idea: str):
     confirmEmbed.set_footer(text='Thank you for your ideas!')
     await ctx.send(embed=confirmEmbed)
 
-@slash.slash(name='test',description='test',guild_ids=[862066219774902313])
-async def _test(ctx):
-    await ctx.send("test")
-
 
 # Run the bot
 bot.run(token)
