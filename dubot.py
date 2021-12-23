@@ -11,6 +11,9 @@ from discord.ext.commands.core import MissingPermissions
 from discord.ext.commands.core import BotMissingPermissions
 from discord_slash import SlashCommand,SlashContext
 from discord_slash.utils.manage_commands import create_choice,create_option
+from discord_slash.utils import manage_components
+from discord_slash.model import ButtonStyle
+from discord_slash import context
 import topgg
 import json
 import os
@@ -26,7 +29,6 @@ intents.members = True
 
 with open('config.json') as f:
     config = json.load(f)
-
 token = config['token']
 guildIDs = config['guildIDs']
 ownerID = config['ownerID']
@@ -152,44 +154,9 @@ async def on_member_remove(member: discord.Member):
 
 # Handling Errors.
 @bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound) or isinstance(error, commands.NotOwner) or isinstance(error, commands.NoPrivateMessage):
-        return
-    elif isinstance(error, commands.BotMissingPermissions):
-        botPermEmbed = discord.Embed(title='ERROR',description='The Bot is missing the required permission(s).',color=0x992D22)
-        permValues = ''
-        for perm in error.missing_perms:
-            permValues = permValues+ f"{perm}\n"
-        botPermEmbed.add_field(name="Missing Permission(s):",value=permValues,inline=False)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
-        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
-        await ctx.send(embed=botPermEmbed)
-        return
-    elif isinstance(error, commands.MissingPermissions):
-        botPermEmbed = discord.Embed(title='ERROR',description='You are missing the required permission(s).',color=0x992D22)
-        permValues = ''
-        for perm in error.missing_perms:
-            permValues = permValues+ f"{perm}\n"
-        botPermEmbed.add_field(name="Missing Permission(s):",value=permValues,inline=False)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
-        botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
-        await ctx.send(embed=botPermEmbed)
-        return
-    else:
-        errorEmbed = discord.Embed(title='ERROR',description=error,color=0x992D22)
-        errorEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
-        errorEmbed.set_thumbnail(url=bot.user.avatar_url)
-        errorEmbed.add_field(name="Bug?",value="Please report this error using /bug if you think its a bug.")
-        await ctx.send(embed=errorEmbed)
+async def on_slash_command_error(ctx, error):
+    errorEmbed = discord.Embed(title='ERROR',description=error,color=0x992D22)
+    await ctx.send(embed=errorEmbed)
 
 
 # The commands
@@ -200,7 +167,6 @@ async def on_command_error(ctx, error):
 async def _shutdown(ctx):
     await ctx.send("Bye!")
     await bot.change_presence(status=discord.Status.invisible)
-    await slash.close()
     await bot.close()
 
 @bot.command(name='restart',description='Restarts the bot')
@@ -250,7 +216,7 @@ async def _toggletickets(ctx, choice: str=None):
     
     with open('json/data.json','w') as f:
         json.dump(jsonData, f, indent=4)
-    
+
 @slash.slash(name='create_ticket',description='Creates a support ticket if enabled.',options=[
     create_option(
         name='reason',
@@ -289,16 +255,31 @@ async def _createticket(ctx, reason: str=None):
 
     embed = discord.Embed(title='Ticket',description=f'Created by {ctx.author.mention}',color=discord.Colour.random())
     embed.add_field(name='Reason:',value=reason)
-    await channel.send(embed=embed)
+    buttons = [
+        manage_components.create_button(
+            style=ButtonStyle.danger,
+            label='Lock Ticket',
+            custom_id='lock_button'
+        )
+    ]   
+    action_row= manage_components.create_actionrow(*buttons)
+
+    await channel.send(embed=embed, components=[action_row])
     await ctx.reply("Ticket Created.")
 
-    message = await channel.send("React with :lock: to close the ticket.")
-    await message.add_reaction("🔒")
-
-    def check(reaction, user):
-        return str(reaction) == "🔒" and user != bot.user
-    await bot.wait_for("reaction_add",check=check)
+    button_ctx: context.ComponentContext = await manage_components.wait_for_component(bot, components=action_row)
+    buttons = [
+        manage_components.create_button(
+            style=ButtonStyle.danger,
+            label='Lock Ticket',
+            custom_id='lock_button',
+            disabled=True
+        )
+    ]   
+    action_row= manage_components.create_actionrow(*buttons)
+    await button_ctx.edit_origin(embed=embed, components=[action_row])
     
+
     try:
         await channel.set_permissions(ctx.author,reason='Ticket System',read_messages=False)
     except discord.Forbidden:
@@ -1441,7 +1422,7 @@ async def _colour(ctx):
 async def _bug(ctx,bug: str):
     # Make the embed to send
     bugEmbed = discord.Embed(title="New Bug:",color=discord.Colour.random())
-    bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
+    bugEmbed.set_author(name=ctx.author.display_name,icon_url=ctx.author.avatar_url)
     bugEmbed.add_field(name='Bug:',value=bug)
     bugEmbed.add_field(name='Reported by:',value=f'<@!{ctx.author.id}>')
     owner = bot.get_user(ownerID)
@@ -1464,7 +1445,7 @@ async def _bug(ctx,bug: str):
 async def _idea(ctx,idea: str):
     # Make the embed to send
     bugEmbed = discord.Embed(title="New idea:",color=discord.Colour.random())
-    bugEmbed.set_author(name=ctx.author.name,icon_url=ctx.author.avatar_url)
+    bugEmbed.set_author(name=ctx.author.display_name,icon_url=ctx.author.avatar_url)
     bugEmbed.add_field(name='Idea:',value=idea)
     bugEmbed.add_field(name='Made by:',value=f'<@!{ctx.author.id}>')
     owner = bot.get_user(ownerID)
@@ -1475,6 +1456,11 @@ async def _idea(ctx,idea: str):
     confirmEmbed.add_field(name='Idea:',value=idea)
     confirmEmbed.set_footer(text='Thank you for your ideas!')
     await ctx.send(embed=confirmEmbed)
+
+@slash.slash(name='test',description='test',guild_ids=[862066219774902313])
+async def _test(ctx):
+    await ctx.send("test")
+
 
 # Run the bot
 bot.run(token)
