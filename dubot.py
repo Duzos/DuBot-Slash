@@ -310,10 +310,6 @@ async def _kick(ctx, user: str, reason: str=None):
         await user.kick(reason=reason)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -347,10 +343,6 @@ async def _lockchannel(ctx, channel: str=None):
         await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -376,10 +368,6 @@ async def _unlockchannel(ctx, channel: str=None):
         await channel.set_permissions(ctx.guild.default_role,overwrite=overwrite)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -414,10 +402,6 @@ async def _mute(ctx,user: str, reason: str=None):
                 await user.add_roles(discord.Role)
             except discord.Forbidden:
                 botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-                botPermEmbed.set_author(
-                    name=ctx.message.author.name,
-                    icon_url=ctx.message.author.avatar_url
-                )
                 botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
                 try:
                     await ctx.reply(embed=botPermEmbed)
@@ -441,10 +425,6 @@ async def _mute(ctx,user: str, reason: str=None):
         role =  await guild.create_role(name='Muted',reason='Muted role was not found, so I made one.',permissions=permissions)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -459,10 +439,6 @@ async def _mute(ctx,user: str, reason: str=None):
         await user.add_roles(role)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -475,10 +451,6 @@ async def _mute(ctx,user: str, reason: str=None):
     await msg.edit(embed=muteEmbed)
     muteEmbed = discord.Embed(title='Mute',description=f'Muted {user.mention}.',color=discord.Colour.random())
     muteEmbed.set_thumbnail(url=ctx.guild.icon_url)
-    muteEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
     muteEmbed.add_field(name='Reason:',value=reason)
     muteEmbed.add_field(name='Server:',value=ctx.guild.name)
     await user.send(embed=muteEmbed)
@@ -501,10 +473,6 @@ async def _unmute(ctx, user: str):
                 await user.remove_roles(discord.Role,reason="Unmuting the user.")
             except discord.Forbidden:
                 botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-                botPermEmbed.set_author(
-                    name=ctx.message.author.name,
-                    icon_url=ctx.message.author.avatar_url
-                )
                 botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
                 try:
                     await ctx.reply(embed=botPermEmbed)
@@ -542,10 +510,6 @@ async def _ban(ctx, user: str, reason: str=None):
         await user.ban(reason=reason)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -577,10 +541,6 @@ async def _slowmode(ctx, seconds: int):
         await ctx.channel.edit(slowmode_delay=seconds)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -605,10 +565,6 @@ async def _clear(ctx, amount: int):
         await ctx.channel.purge(limit=amount)
     except discord.Forbidden:
         botPermEmbed = discord.Embed(title='ERROR',description=f'{bot.user.name} is missing the required permission(s) to run this command.',color=0x992D22)
-        botPermEmbed.set_author(
-            name=ctx.message.author.name,
-            icon_url=ctx.message.author.avatar_url
-        )
         botPermEmbed.set_thumbnail(url=bot.user.avatar_url)
         try:
             await ctx.reply(embed=botPermEmbed)
@@ -797,7 +753,6 @@ async def _meme(ctx):
 
     memeEmbed = discord.Embed(title='Meme',color=discord.Colour.random(),type='image')
     memeEmbed.set_image(url=submission.url)
-    memeEmbed.set_author(name=ctx.message.author.name,icon_url=ctx.message.author.avatar_url)
     await ctx.send(embed=memeEmbed)
 
 @slash.slash(name='random_name',description='Gives you a random name.')
@@ -885,7 +840,7 @@ async def _advice(ctx):
         required=False,
         option_type=4
     )
-])
+],guild_ids=guildIDs)
 async def _e(ctx,amount: int=None):
         eList = ""
         if amount != None:
@@ -1337,7 +1292,7 @@ async def _nsfwreddit(ctx):
 
 @slash.slash(name='vote',description=f'vote for this bot.')
 async def _vote(ctx):
-    voteEmbed = discord.Embed(title=f'Vote',description=f'[top.gg](https://top.gg/bot/{bot.user.id}/vote)',color=discord.Colour.random())
+    voteEmbed = discord.Embed(title=f'Vote',description=f'[top.gg](https://top.gg/bot/{bot.user.id}/vote)\n[discordbotlist.com](https://discordbotlist.com/bots/dubot-slash/upvote)',color=discord.Colour.random())
     voteEmbed.set_thumbnail(url=bot.user.avatar_url)
     await ctx.send(embed=voteEmbed)
 
@@ -1422,7 +1377,6 @@ async def _colour(ctx):
 async def _bug(ctx,bug: str):
     # Make the embed to send
     bugEmbed = discord.Embed(title="New Bug:",color=discord.Colour.random())
-    bugEmbed.set_author(name=ctx.author.display_name,icon_url=ctx.author.avatar_url)
     bugEmbed.add_field(name='Bug:',value=bug)
     bugEmbed.add_field(name='Reported by:',value=f'<@!{ctx.author.id}>')
     owner = bot.get_user(ownerID)
@@ -1445,7 +1399,6 @@ async def _bug(ctx,bug: str):
 async def _idea(ctx,idea: str):
     # Make the embed to send
     bugEmbed = discord.Embed(title="New idea:",color=discord.Colour.random())
-    bugEmbed.set_author(name=ctx.author.display_name,icon_url=ctx.author.avatar_url)
     bugEmbed.add_field(name='Idea:',value=idea)
     bugEmbed.add_field(name='Made by:',value=f'<@!{ctx.author.id}>')
     owner = bot.get_user(ownerID)
