@@ -65,6 +65,11 @@ async def update_stats():
     except Exception as e:
         owner = bot.get_user(ownerID)
         await owner.send('Failed to post server count\n{}: {}'.format(type(e).__name__, e))
+    try:
+        await bot.change_presence(status=discord.Status.online, activity=discord.Game(f"in {len(bot.guilds)} servers."))
+    except Exception as e:
+        owner = bot.get_user(ownerID)
+        await owner.send('Failed to update status\n{}:{}'.format(type(e).__name__, e))
 update_stats.start()
 
 @bot.event
