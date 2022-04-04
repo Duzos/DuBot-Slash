@@ -11,7 +11,7 @@ import random
 
 with open('config.json','r') as f:
     config = json.load(f)
-token = config['dubot']
+token = config['token']
 guildIDs = config['guildIDs']
 redditID = config['redditID']
 redditSecret = config['redditSecret']
@@ -27,6 +27,11 @@ async def on_ready():
 
 # Commands
  # Information Category
+
+@bot.command(name='poll',description='Run a poll',scope=guildIDs)
+async def _poll(ctx):
+    await ctx.send(ctx.member.permissions)
+    await ctx.send('test')
 
 @bot.command(name='information',description='Sends info on the bot.')
 async def _information(ctx):
