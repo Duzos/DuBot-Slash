@@ -28,10 +28,11 @@ async def on_ready():
 # Commands
  # Information Category
 
-@bot.command(name='poll',description='Run a poll',scope=guildIDs)
-async def _poll(ctx):
-    await ctx.send(ctx.member.permissions)
-    await ctx.send('test')
+# idk how to do permissions in this bruh
+# @bot.command(name='poll',description='Run a poll',scope=guildIDs)
+# async def _poll(ctx):
+#     await ctx.send(ctx.member.permissions)
+#     await ctx.send('test')
 
 @bot.command(name='information',description='Sends info on the bot.')
 async def _information(ctx):
@@ -40,7 +41,7 @@ async def _information(ctx):
 
 @bot.command(type=interactions.ApplicationCommandType.USER,name='Get Avatar')
 async def _getavatar(ctx: interactions.CommandContext):
-    embed = interactions.Embed(title=f'{ctx.target.username}\'s Avatar',image=interactions.EmbedImageStruct(url=f'https://cdn.discordapp.com/avatars/{ctx.target.id}/{ctx.target.avatar}')._json,color=ctx.target.accent_color)
+    embed = interactions.Embed(title=f'{ctx.target.nick}\'s Avatar',image=interactions.EmbedImageStruct(url=f'https://cdn.discordapp.com/avatars/{ctx.target.id}/{ctx.target.avatar}')._json)
     await ctx.send(embeds=[embed])
 
 @bot.command(name='uptime',description='Tells you how long the bot has been online for.')
@@ -50,7 +51,7 @@ async def _uptime(ctx):
     minutes, seconds = divmod(remainder, 60)
     days, hours = divmod(hours, 24)
     embed = interactions.Embed(title='Uptime',description=f"{days}d, {hours}h, {minutes}m, {seconds}s",thumbnail=interactions.EmbedImageStruct(url=f'https://cdn.discordapp.com/avatars/{bot.me.id}/{bot.me.icon}')._json)
-    await ctx.send(embeds=[embed])
+    await ctx.send(embeds=[embed],ephemeral=True)
 
 @bot.command(name='bitcoin',description='Sends the current price of bitcoin.',options=[
     interactions.Option(
@@ -80,6 +81,115 @@ async def _invite(ctx):
         await ctx.send(embeds=[embed],ephemeral=True)
 
  # Fun Category
+
+
+@bot.command(name='spaceweights',description='Get your weight on other planets.',options=[
+    interactions.Option(
+        type=interactions.OptionType.INTEGER,
+        name='weight',
+        description='Your weight in kg',
+        required=True
+    ),
+    interactions.Option(
+        type=interactions.OptionType.STRING,
+        name='planet',
+        description='The planet you want to find out your weight on.',
+        required=True
+    )
+])
+async def _spaceweights(ctx, weight: int, planet: str):
+    planet = planet.lower()
+        
+    planets = {
+    "sun": 27.01,
+    "mercury": 0.38,
+    "venus": 0.91,
+    "moon": 0.166,
+    "mars": 0.38,
+    "jupiter": 2.34,
+    "saturn": 1.06,
+    "uranus": 0.92,
+    "neptune": 1.19,
+    "pluto": 0.06,
+    "earth": 1,
+    "io": 0.183,
+    "europa": 0.133,
+    "ganymede": 0.144,
+    "callisto": 0.126
+    }
+
+
+    if planet not in planets:
+        planetList = ""
+        for val in planets:
+            planetList = planetList + val + "\n"
+        return await ctx.send(f"Please provide a valid planet:\n{planetList}")
+
+    multiple = planets[planet]
+    embed = interactions.Embed(title='Space Weights', description=f"Your weight on {planet} is {weight * multiple}kg.")
+    await ctx.send(embed=embed)
+
+@bot.command(name='truthordare',description='Play truth or dare')
+async def _tod(ctx):
+    url = 'https://gist.githubusercontent.com/deepakshrma/9498a19a3ed460fc662c536d138c29b1/raw/f29d323b9b3f0a82f66ed58c7117fb9b599fb8d5/truth-n-dare.json'
+    responseApi = requests.get(url).json()
+    sfw_list = [
+        item
+        for item in responseApi
+        if int(item['level']) < 4
+    ]
+    choice = random.choice(sfw_list)
+    choiceID = choice['id']
+    choiceLevel = choice['level']
+    choiceType = choice['type']
+    choiceSum = choice['summary']
+
+
+    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7)
+    embed.set_footer(text=f'ID: {choiceID} | Level: {choiceLevel}')
+    await ctx.send(embed=embed)
+
+@bot.command(name='truth',description='Pick a truth')
+async def _truth(ctx):
+    url = 'https://gist.githubusercontent.com/deepakshrma/9498a19a3ed460fc662c536d138c29b1/raw/f29d323b9b3f0a82f66ed58c7117fb9b599fb8d5/truth-n-dare.json'
+    responseApi = requests.get(url).json()
+    truth_list = [
+        item
+        for item in responseApi
+        if item["type"] == "Truth"
+    ]
+
+    choice = random.choice(truth_list)
+    choiceType = choice['type']
+    choiceID = choice['id']
+    choiceLevel = choice['level']
+    choiceSum = choice['summary']
+
+    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7)
+    embed.set_footer(text=f'ID: {choiceID} | Level: {choiceLevel}')
+    await ctx.send(embed=embed)
+
+@bot.command(name='dare',description='Pick a dare')
+async def _dare(ctx):
+    url = 'https://gist.githubusercontent.com/deepakshrma/9498a19a3ed460fc662c536d138c29b1/raw/f29d323b9b3f0a82f66ed58c7117fb9b599fb8d5/truth-n-dare.json'
+    responseApi = requests.get(url).json()
+    dare_list = [
+        item
+        for item in responseApi
+        if item["type"] == "Dare"
+    ]
+
+    choice = random.choice(dare_list)
+    choiceType = choice['type']
+    choiceID = choice['id']
+    choiceLevel = choice['level']
+    choiceSum = choice['summary']
+    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7)
+    embed.set_thumbnail(url=bot.user.display_avatar.url)
+    embed.set_footer(text=f'ID: {choiceID} | Level: {choiceLevel}')
+    await ctx.send(embed=embed)
+
+
 @bot.command(name='random-reddit',description='Gets a post from a random subreddit.')
 async def _randomreddit(ctx):
     await ctx.defer()
@@ -92,7 +202,7 @@ async def _randomreddit(ctx):
 
     sb_extension = submission.url[len(submission.url) - 3 :].lower()
     if sb_extension == "jpg" or sb_extension == "png" or sb_extension == "gif":
-        embed = interactions.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})',type="image",image=interactions.EmbedImageStruct(url=submission.url))
+        embed = interactions.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})',type="image",image=interactions.EmbedImageStruct(url=submission.url)._json)
         await ctx.send(embeds=[embed])
         return
     embed = interactions.Embed(title=sb_random.display_name,description=f'[{submission.title}]({submission.url})')
@@ -115,7 +225,7 @@ async def _subreddit(ctx, subreddit):
 
     sb_extension = submission.url[len(submission.url) - 3 :].lower()
     if sb_extension == "jpg" or sb_extension == "png" or sb_extension == "gif":
-        embed = interactions.Embed(title=subreddit,description=f'[{submission.title}]({submission.url})',image=interactions.EmbedImageStruct(url=submission.url),type='image')
+        embed = interactions.Embed(title=subreddit,description=f'[{submission.title}]({submission.url})',image=interactions.EmbedImageStruct(url=submission.url)._json,type='image')
         await ctx.send(embeds=[embed])
         return
     embed = interactions.Embed(title=subreddit,description=f'[{submission.title}]({submission.url})')
@@ -135,27 +245,28 @@ async def _say(ctx, message: str):
         return
     await ctx.send(message)
 
-@bot.command(name='modal-test',description='modal test',scope=guildIDs)
-async def _modal_test(ctx):
-    modal = interactions.Modal(
-        title='modal test',
-        custom_id='modal-test-id',
-        components=[interactions.TextInput(
-            style=interactions.TextStyleType.SHORT,
-            label='what a cool test',
-            custom_id="text_input_response",
-            min_length=1,
-            max_length=3
-        )]
-    )
-
-    await ctx.popup(modal)
-
-@bot.modal('modal-test-id')
-async def modal_test_response(ctx, response: str):
-    await ctx.send(f"You wrote: {response}")
-
 # Tests
+
+# @bot.command(name='modal-test',description='modal test',scope=guildIDs)
+# async def _modal_test(ctx):
+#     modal = interactions.Modal(
+#         title='modal test',
+#         custom_id='modal-test-id',
+#         components=[interactions.TextInput(
+#             style=interactions.TextStyleType.SHORT,
+#             label='what a cool test',
+#             custom_id="text_input_response",
+#             min_length=1,
+#             max_length=3
+#         )]
+#     )
+
+#     await ctx.popup(modal)
+
+# @bot.modal('modal-test-id')
+# async def modal_test_response(ctx, response: str):
+#     await ctx.send(f"You wrote: {response}")
+
 # @bot.command(name='test',description='simple test command for interactions library',scope=guildIDs)
 # async def _test(ctx):
 #     await ctx.send("HI")
