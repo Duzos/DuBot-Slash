@@ -1,5 +1,4 @@
 # Imports
-from code import interact
 import interactions
 import json
 from datetime import datetime
@@ -82,6 +81,14 @@ async def _invite(ctx):
 
  # Fun Category
 
+@bot.command(name='insult',description='Produces an insult for you')
+async def _insult(ctx):
+    url = 'https://insult.mattbas.org/api/insult.json'
+    responseApi = requests.get(url).json()
+    insult = responseApi['insult']
+
+    embed = interactions.Embed(title='Insult',description=insult,footer=interactions.EmbedFooter(text=f"API: {url}")._json,color=0xED1C06)
+    await ctx.send(embeds=[embed])
 
 @bot.command(name='spaceweights',description='Get your weight on other planets.',options=[
     interactions.Option(
@@ -127,7 +134,7 @@ async def _spaceweights(ctx, weight: int, planet: str):
 
     multiple = planets[planet]
     embed = interactions.Embed(title='Space Weights', description=f"Your weight on {planet} is {weight * multiple}kg.")
-    await ctx.send(embed=embed)
+    await ctx.send(embeds=[embed])
 
 @bot.command(name='truthordare',description='Play truth or dare')
 async def _tod(ctx):
@@ -145,9 +152,8 @@ async def _tod(ctx):
     choiceSum = choice['summary']
 
 
-    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7)
-    embed.set_footer(text=f'ID: {choiceID} | Level: {choiceLevel}')
-    await ctx.send(embed=embed)
+    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7,footer=interactions.EmbedFooter(text=f'ID: {choiceID} | Level: {choiceLevel}')._json)
+    await ctx.send(embeds=[embed])
 
 @bot.command(name='truth',description='Pick a truth')
 async def _truth(ctx):
@@ -165,9 +171,8 @@ async def _truth(ctx):
     choiceLevel = choice['level']
     choiceSum = choice['summary']
 
-    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7)
-    embed.set_footer(text=f'ID: {choiceID} | Level: {choiceLevel}')
-    await ctx.send(embed=embed)
+    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7,footer=interactions.EmbedFooter(text=f'ID: {choiceID} | Level: {choiceLevel}')._json)
+    await ctx.send(embeds=[embed])
 
 @bot.command(name='dare',description='Pick a dare')
 async def _dare(ctx):
@@ -184,10 +189,8 @@ async def _dare(ctx):
     choiceID = choice['id']
     choiceLevel = choice['level']
     choiceSum = choice['summary']
-    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7)
-    embed.set_thumbnail(url=bot.user.display_avatar.url)
-    embed.set_footer(text=f'ID: {choiceID} | Level: {choiceLevel}')
-    await ctx.send(embed=embed)
+    embed = interactions.Embed(title=choiceType,description=choiceSum,color=0xA7C7E7,footer=interactions.EmbedFooter(text=f'ID: {choiceID} | Level: {choiceLevel}')._json)
+    await ctx.send(embeds=[embed])
 
 
 @bot.command(name='random-reddit',description='Gets a post from a random subreddit.')
